@@ -1,0 +1,1602 @@
+<!doctype html>
+<html lang="en" data-theme="meadow">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f3efe6">
+<title>Playing Possum</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='15' cy='17' r='11' fill='%233b3946'/%3E%3Ccircle cx='49' cy='17' r='11' fill='%233b3946'/%3E%3Cpath d='M32 60C21 57 6 45 7 29 8 16 20 9.5 32 9.5S56 16 57 29C58 45 43 57 32 60Z' fill='%23fbf8f2' stroke='%235d5a68' stroke-width='2'/%3E%3Ccircle cx='22' cy='34' r='5' fill='%231d1b25'/%3E%3Ccircle cx='42' cy='34' r='5' fill='%231d1b25'/%3E%3Ccircle cx='32' cy='54' r='4.5' fill='%23ee7f9d'/%3E%3C/svg%3E">
+<style>
+/* ===== Base ===== */
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.3 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;touch-action:manipulation}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,p,ul{margin:0}
+.fun{font-family:ui-rounded,"Arial Rounded MT Bold","Nunito","Baloo 2","Trebuchet MS",system-ui,sans-serif}
+
+/* ===== Themes (area colors are set from the script) ===== */
+:root,[data-theme="meadow"]{--bg:#f3efe6;--ink:#2a2933;--muted:#6f6c7a;--card:#fffdf8;--chip:#ebe6da;--off:#c9c4b8;--line:#2a2933;--grid:rgba(42,41,51,.17);--accent:#2f7d57;--accent-ink:#fff;--accent-lip:#1f5a3d;--lip:rgba(42,41,51,.16);--xmark:rgba(42,41,51,.62);--danger:#d8372f;--ring:#2a2933;--gold:#e9a23b}
+[data-theme="night"]{--bg:#12141c;--ink:#eeecf5;--muted:#a09db0;--card:#1f2230;--chip:#2b2f40;--off:#4a4e62;--line:#07080c;--grid:rgba(0,0,0,.28);--accent:#86d6a2;--accent-ink:#0f2418;--accent-lip:#4f9c6b;--lip:rgba(0,0,0,.45);--xmark:rgba(255,255,255,.72);--danger:#ff6b61;--ring:#07080c;--gold:#f2c063}
+[data-theme="bold"]{--bg:#ffffff;--ink:#111114;--muted:#55555f;--card:#f3f3f6;--chip:#e6e6ec;--off:#b9b9c4;--line:#000;--grid:rgba(0,0,0,.2);--accent:#1b1b22;--accent-ink:#fff;--accent-lip:#000;--lip:rgba(0,0,0,.22);--xmark:rgba(0,0,0,.68);--danger:#e0211b;--ring:#000;--gold:#e9a23b}
+
+/* ===== Page layout: one column, nothing scrolls ===== */
+#app{position:fixed;top:0;bottom:0;left:0;right:0;margin:0 auto;max-width:520px;display:flex;flex-direction:column;padding:calc(6px + env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom))}
+.top{flex:none;height:46px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:8px}
+.brand h1{font-size:clamp(17px,5.3vw,22px);font-weight:800;letter-spacing:-.3px;white-space:nowrap}
+.logo{width:36px;height:36px}
+.top-right{display:flex;align-items:center;gap:6px}
+.clock{font-variant-numeric:tabular-nums;font-weight:700;color:var(--muted);min-width:38px;text-align:right}
+.icon-btn{width:46px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--card);box-shadow:0 3px 0 var(--lip)}
+.icon-btn svg{width:24px;height:24px}
+.status{flex:none;height:30px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 3px;font-size:14px;font-weight:700;color:var(--muted)}
+.status .left{display:flex;align-items:center;gap:8px;min-width:0}
+.lvl{background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:3px 11px;font-size:13.5px;font-weight:800;white-space:nowrap}
+.found{display:flex;align-items:center;gap:5px;color:var(--ink);white-space:nowrap}
+.found svg{width:20px;height:20px}
+.stage{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:2px}
+.perch{flex:1;min-height:0;display:flex;align-items:flex-start;justify-content:center}
+.perch svg{aspect-ratio:120/150;transform-origin:50% 8%}
+.perch.wiggle svg{animation:swing .5s ease-in-out 4 alternate}
+.perch.party svg{animation:swing .45s ease-in-out infinite alternate}
+
+/* ===== Board ===== */
+.wrap{position:relative;flex:none;filter:drop-shadow(0 4px 0 var(--lip))}
+.board{position:absolute;inset:0;display:grid;border-radius:10px;overflow:hidden;touch-action:none;cursor:pointer}
+.cell{position:relative;box-shadow:inset 0 0 0 .5px var(--grid)}
+.cell::before{content:"";position:absolute;inset:0;background:#000;opacity:0;transition:opacity .15s;pointer-events:none}
+.mk{position:absolute;pointer-events:none;z-index:1}
+.mk.p{inset:4%;width:92%;height:92%;animation:pop .24s cubic-bezier(.3,1.7,.5,1)}
+.mk.x{inset:21%;width:58%;height:58%;color:var(--xmark);animation:scribble .16s ease-out}
+.mk.x.auto{opacity:.6}
+.cell.clash::after{content:"";position:absolute;inset:5%;border-radius:50%;background:var(--danger);opacity:.85;pointer-events:none}
+/* an opossum that was on the board from the start wears a little pin */
+.cell.given::after{content:"";position:absolute;right:5%;top:5%;width:24%;height:24%;border-radius:50%;background:var(--gold);box-shadow:0 0 0 1.5px #fff,0 1px 2px rgba(0,0,0,.4);z-index:2;pointer-events:none}
+.cell.nope .mk{animation:nope .3s}
+.lines{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.lines path,.lines rect{fill:none;stroke:var(--line);vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
+.making{position:absolute;inset:0;display:grid;place-items:center;border-radius:10px;background:var(--bg);opacity:.88;font-weight:800;font-size:17px}
+/* a hint dims everything except the squares it is talking about */
+.board.hinting .cell:not(.hc):not(.ht)::before{opacity:.3}
+.cell.ht{z-index:2}
+.cell.ht::after{content:"";position:absolute;inset:8%;width:auto;height:auto;border-radius:24%;background:none;opacity:1;box-shadow:0 0 0 2.5px #fff,0 0 0 5px var(--ring);animation:pulse .65s ease-in-out infinite alternate;pointer-events:none;z-index:2}
+.board.won .mk.p{animation:hop .55s ease-in-out 2;animation-delay:var(--d,0ms)}
+
+/* ===== Message line and the four big buttons ===== */
+.note{flex:none;min-height:58px;display:flex;align-items:center;gap:10px;padding:6px 3px}
+.note p{flex:1;font-size:15.5px;line-height:1.28;font-weight:600}
+.note p.soft{color:var(--muted);font-weight:500}
+.note-btn{flex:none;height:46px;min-width:76px;padding:0 16px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:800;box-shadow:0 3px 0 var(--accent-lip)}
+.bar{flex:none;display:grid;grid-template-columns:1fr 1.45fr 1fr 1fr;gap:8px;padding-bottom:3px}
+.bar-btn{height:62px;border-radius:17px;background:var(--card);box-shadow:0 3px 0 var(--lip);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;font-weight:700;transition:transform .08s}
+.bar-btn svg{width:25px;height:25px}
+.bar-btn.main{background:var(--accent);color:var(--accent-ink);font-size:15px;font-weight:800;box-shadow:0 3px 0 var(--accent-lip)}
+.bar-btn:active,.note-btn:active,.pill:active,.chip:active,.icon-btn:active{transform:translateY(2px);box-shadow:none}
+.bar-btn:disabled{opacity:.38}
+
+/* ===== Solved card (sits over the buttons, the board stays in view) ===== */
+.win{position:absolute;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));background:var(--card);border-radius:24px;box-shadow:0 12px 44px rgba(0,0,0,.32);padding:12px 14px 14px;animation:rise .4s cubic-bezier(.2,1.4,.4,1);z-index:5}
+.win-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.win-top svg{width:60px;height:76px;flex:none;transform-origin:50% 8%;animation:swing 1.6s ease-in-out infinite alternate}
+.win-top div{flex:1;min-width:0}
+.win-top small{display:block;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.win-top h2{font-size:23px;font-weight:800;line-height:1.1;margin:1px 0 3px}
+.win-top p{font-size:14px;font-weight:600;color:var(--muted);line-height:1.25}
+.win-top p.tally{font-size:13px;margin-top:3px;color:var(--ink)}
+.x-btn{width:44px;height:44px;border-radius:50%;background:var(--chip);font-size:20px;font-weight:700;align-self:flex-start;flex:none}
+.win-go{display:flex;gap:7px}
+.win-go .pill.big{flex:1}
+.skip{width:54px;height:54px;border-radius:16px;background:var(--chip);font-weight:800;font-size:16px;box-shadow:0 3px 0 var(--lip)}
+
+/* ===== Panels: settings, how-to and the "leave this puzzle?" question ===== */
+.veil{position:fixed;inset:0;z-index:20;background:rgba(12,12,22,.5);display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
+.veil.mid{align-items:center;padding:16px}
+.card{width:100%;max-width:520px;max-height:96%;overflow:auto;background:var(--card);color:var(--ink);border-radius:24px 24px 0 0;padding:12px 16px calc(14px + env(safe-area-inset-bottom));animation:rise .25s ease-out}
+.veil.mid .card{max-width:370px;border-radius:24px;padding:18px 20px 20px;text-align:center}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.card h2{font-size:22px;font-weight:800}
+.row{margin-top:9px}
+.lbl{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{flex:1;height:40px;border-radius:12px;background:var(--chip);font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+#optSize .chip{flex:1 0 calc(16.6% - 5px)}
+.chip.on{background:var(--accent);color:var(--accent-ink)}
+.chip i{width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(128,128,128,.5)}
+.chip.label{flex:2;background:none;font-size:16px;font-weight:800}
+.dim{opacity:.45}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:11px}
+.tog{height:44px;border-radius:12px;background:var(--chip);display:flex;align-items:center;justify-content:space-between;padding:0 11px 0 13px;font-weight:700;font-size:14.5px}
+.tog i{width:36px;height:22px;border-radius:11px;background:var(--off);position:relative;transition:background .15s;flex:none}
+.tog i::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+.tog[aria-checked="true"] i{background:var(--accent)}
+.tog[aria-checked="true"] i::after{left:16px}
+.pill{height:46px;padding:0 20px;border-radius:14px;background:var(--chip);font-weight:800;box-shadow:0 3px 0 var(--lip)}
+.pill.main{background:var(--accent);color:var(--accent-ink);box-shadow:0 3px 0 var(--accent-lip)}
+.pill.big{width:100%;height:54px;font-size:17px;border-radius:16px}
+.shelf{margin-top:11px;font-size:13.5px;line-height:1.45;color:var(--muted);font-weight:600}
+.shelf b{color:var(--ink)}
+.two-btn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
+.hero{width:104px;height:130px;transform-origin:50% 8%;animation:swing 2s ease-in-out infinite alternate}
+.rules{list-style:none;padding:0;margin:10px 0 16px;text-align:left;display:grid;gap:9px;font-size:15.5px;line-height:1.3}
+.rules li{display:flex;gap:10px;align-items:flex-start}
+.rules li>span{flex:none;width:26px;height:26px;border-radius:8px;background:var(--chip);display:grid;place-items:center;font-weight:800;font-size:14px}
+.ask p{font-size:16px;margin:8px 0 16px;line-height:1.35}
+.ask .pill{width:100%;height:54px;font-size:17px;border-radius:16px}
+.ask .pill+.pill{margin-top:9px;height:48px;font-size:15.5px}
+
+/* ===== Motion ===== */
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes scribble{from{transform:scale(.5) rotate(-25deg);opacity:0}}
+@keyframes nope{25%{transform:translateX(-9%) rotate(-7deg)}75%{transform:translateX(9%) rotate(7deg)}}
+/* ===== The main screen: what the game opens on. It sits over the game, under the cards. ===== */
+.home{position:fixed;inset:0;z-index:15;background:var(--bg);display:flex;overflow:auto;padding:calc(10px + env(safe-area-inset-top)) 18px calc(14px + env(safe-area-inset-bottom));touch-action:pan-y;animation:fade .2s}
+.home-in{width:100%;max-width:400px;margin:auto;display:grid;gap:10px;text-align:center}
+.home-art{width:min(38vw,150px);height:auto;aspect-ratio:120/150;margin:0 auto -6px;display:block;transform-origin:50% 0;animation:sway 3.6s ease-in-out infinite}
+.home h1{font-size:36px;font-weight:800;line-height:1;margin:0}
+.home-where{font-size:15px;font-weight:700;color:var(--muted);min-height:20px;margin:0}
+.home-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.home-two .pill{padding:0 6px}
+.home .pill[aria-expanded="true"]{background:var(--ink);color:var(--bg)}
+.home-box{background:var(--card);border-radius:16px;padding:10px;display:grid;gap:8px;box-shadow:0 3px 0 var(--lip);text-align:left}
+.home-box .pill{width:100%}
+.home-box .lbl{margin:0}
+#homeSize .chip{flex:1 0 calc(16.66% - 5px)}
+.home-best{font-size:13.5px;font-weight:700;color:var(--muted);min-height:18px;margin:0}
+.win-home{margin-top:8px;height:44px;width:100%;border-radius:14px;font-weight:700;color:var(--muted)}
+@keyframes sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes pulse{from{transform:scale(.92)}to{transform:scale(1.04)}}
+@keyframes hop{0%,100%{transform:none}40%{transform:translateY(-22%) rotate(-6deg)}70%{transform:translateY(3%) rotate(4deg)}}
+@keyframes swing{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important}}
+@media (max-height:620px){.top{height:42px}.note{min-height:48px}.bar-btn{height:54px}}
+</style>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Possum">
+</head>
+<body>
+
+<!-- ===== Art: every drawing lives here once and is stamped with <use> ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- opossum face without eyes (shared by the awake and the "playing dead" faces) -->
+    <g id="pz-face">
+      <circle cx="15" cy="17" r="11.5" fill="#3b3946"/><circle cx="16" cy="18.5" r="6.2" fill="#f3a5b8"/>
+      <circle cx="49" cy="17" r="11.5" fill="#3b3946"/><circle cx="48" cy="18.5" r="6.2" fill="#f3a5b8"/>
+      <path d="M32 60C21 57 6 45 7 29 8 16 20 9.5 32 9.5S56 16 57 29C58 45 43 57 32 60Z" fill="#fbf8f2" stroke="#55525f" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M11.5 23C17 13 26 10.8 32 10.8S47 13 52.5 23C46 20.5 37.5 23 32 31 26.5 23 18 20.5 11.5 23Z" fill="#a19dae"/>
+      <circle cx="15.5" cy="44" r="3.8" fill="#f8bfcd" opacity=".8"/><circle cx="48.5" cy="44" r="3.8" fill="#f8bfcd" opacity=".8"/>
+      <path d="M22 49.5 9.5 47M23 52.5 11.5 54.5M42 49.5 54.5 47M41 52.5 52.5 54.5" stroke="#55525f" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+      <ellipse cx="32" cy="54.6" rx="4.9" ry="4" fill="#ee7f9d"/>
+    </g>
+  </defs>
+  <symbol id="possum" viewBox="0 0 64 64">
+    <use href="#pz-face"/>
+    <ellipse cx="21.5" cy="34.5" rx="5" ry="5.9" fill="#1d1b25"/><circle cx="23.3" cy="32.2" r="1.7" fill="#fff"/>
+    <ellipse cx="42.5" cy="34.5" rx="5" ry="5.9" fill="#1d1b25"/><circle cx="44.3" cy="32.2" r="1.7" fill="#fff"/>
+  </symbol>
+  <symbol id="possum-dead" viewBox="0 0 64 64">
+    <use href="#pz-face"/>
+    <path d="M17.5 30.5l8 8m0-8-8 8M38.5 30.5l8 8m0-8-8 8" stroke="#1d1b25" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+    <path d="M35.5 57.5c2.6-.6 5.2.6 5.800 3 .500 2.200-2.900 3-4.300 1.400-1-1.100-1.500-2.700-1.500-4.400Z" fill="#e8517d"/>
+  </symbol>
+  <!-- the "no opossum here" marks: two fat, slightly wobbly crayon strokes, or a blob -->
+  <symbol id="mark-x" viewBox="0 0 24 24">
+    <path d="M4.600 3.900C5.900 2.700 7.400 3.100 8.500 4.300 11.300 7.300 14.700 10.700 19.700 16.100 20.900 17.400 21.300 19 20.100 20.200 18.900 21.400 17.300 20.900 16.100 19.700 12.300 15.800 8.300 11.600 4.200 7.900 3 6.800 3.300 5 4.600 3.900Z" fill="currentColor"/>
+    <path d="M19.800 3.600C21.100 4.700 21 6.300 19.900 7.500 16.300 11.700 12.400 15.500 8.200 20 7 21.300 5.300 21.600 4.100 20.400 2.900 19.300 3.300 17.700 4.400 16.500 8.100 12.300 12 8.300 15.800 4.300 16.900 3.100 18.600 2.500 19.800 3.600Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="mark-dot" viewBox="0 0 24 24"><path d="M12.300 6.200C15.800 6 18.200 8.700 18 12.100 17.800 15.600 15.200 18.100 11.700 17.900 8.300 17.700 5.900 15.200 6.100 11.800 6.300 8.600 8.900 6.400 12.300 6.200Z" fill="currentColor"/></symbol>
+  <!-- an opossum hanging from a branch by its tail (how-to card, above the board, and the solved card) -->
+  <symbol id="hero" viewBox="0 0 120 150">
+    <path d="M5 17C32 10 82 23 115 12" stroke="#8a5a3c" stroke-width="7.5" stroke-linecap="round" fill="none"/>
+    <path d="M90 14c4-10 14-12 20-10-2 9-10 13-20 10Z" fill="#6fbf73"/><path d="M26 13c-3-8 2-13 9-13 1 7-2 12-9 13Z" fill="#6fbf73"/>
+    <path d="M61 56C64 44 69 32 67 21 65.500 12 55 11 54 18.500 53.200 25 60.500 25 61.500 19.500" stroke="#eda0b4" stroke-width="5.600" stroke-linecap="round" fill="none"/>
+    <ellipse cx="60" cy="78" rx="25" ry="29" fill="#a19dae" stroke="#55525f" stroke-width="2.400"/>
+    <ellipse cx="60" cy="83" rx="15" ry="19" fill="#f4f0ea"/>
+    <ellipse cx="35" cy="66" rx="6.500" ry="4.600" fill="#eda0b4" transform="rotate(-28 35 66)"/><ellipse cx="85" cy="66" rx="6.500" ry="4.600" fill="#eda0b4" transform="rotate(28 85 66)"/>
+    <ellipse cx="37" cy="97" rx="6.500" ry="4.600" fill="#eda0b4" transform="rotate(24 37 97)"/><ellipse cx="83" cy="97" rx="6.500" ry="4.600" fill="#eda0b4" transform="rotate(-24 83 97)"/>
+    <g transform="translate(60 119) rotate(180) scale(.78) translate(-32 -32)"><use href="#possum" width="64" height="64"/></g>
+  </symbol>
+  <!-- button icons -->
+  <symbol id="ic-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10.500a5.500 5.500 0 0 1 0 11H11" fill="none" stroke="currentColor" stroke-width="2.300" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-hint" viewBox="0 0 24 24"><path d="M9.500 18.500h5M10.500 21.500h3M12 2.800a6.200 6.200 0 0 0-3.700 11.200c.700.600 1.100 1.300 1.200 2.200h5c.100-.900.500-1.600 1.200-2.200A6.200 6.200 0 0 0 12 2.800Z" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-restart" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.600-5.900M4 4.500v4.500h4.500" fill="none" stroke="currentColor" stroke-width="2.300" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-new" viewBox="0 0 24 24"><rect x="3.500" y="3.500" width="17" height="17" rx="4.500" fill="none" stroke="currentColor" stroke-width="2.200"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2.300" stroke-linecap="round"/></symbol>
+  <symbol id="ic-house" viewBox="0 0 24 24"><path d="M4 11.500 12 4.500l8 7M6.500 10v9.500h11V10M10 19.500v-5h4v5" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.600" fill="none" stroke="currentColor" stroke-width="2.200"/><circle cx="12" cy="12" r="1.600" fill="currentColor"/><path d="M12 2.300v3M12 18.700v3M2.300 12h3M18.700 12h3M5.100 5.100l2.200 2.200M16.700 16.700l2.200 2.200M5.100 18.900l2.200-2.200M16.700 7.300l2.200-2.200" stroke="currentColor" stroke-width="2.600" stroke-linecap="round"/></symbol>
+</svg>
+
+<!-- ===== The page ===== -->
+<div id="app">
+  <header class="top">
+    <div class="brand"><svg class="logo"><use href="#possum"/></svg><h1 class="fun">Playing Possum</h1></div>
+    <div class="top-right">
+      <span id="clock" class="clock">0:00</span>
+      <button id="btnMain" class="icon-btn" aria-label="Home"><svg><use href="#ic-house"/></svg></button>
+      <button id="btnGear" class="icon-btn" aria-label="Settings"><svg><use href="#ic-gear"/></svg></button>
+    </div>
+  </header>
+  <div class="status"><span class="left"><span id="lvl" class="lvl fun">Level 1</span><span id="what"></span></span><span class="found"><svg><use href="#possum"/></svg><span id="found">0 of 5</span></span></div>
+  <main id="stage" class="stage">
+    <div id="perch" class="perch" aria-hidden="true"><svg><use href="#hero"/></svg></div>
+    <div id="wrap" class="wrap">
+      <div id="board" class="board" role="grid" aria-label="Puzzle board"></div>
+      <svg id="lines" class="lines" aria-hidden="true"></svg>
+      <div id="making" class="making fun" hidden>Making a puzzle…</div>
+    </div>
+  </main>
+  <div class="note" aria-live="polite"><p id="noteText"></p><button id="noteBtn" class="note-btn fun" hidden></button></div>
+  <nav class="bar fun">
+    <button id="btnUndo" class="bar-btn"><svg><use href="#ic-undo"/></svg>Undo</button>
+    <button id="btnHint" class="bar-btn main"><svg><use href="#ic-hint"/></svg>Hint</button>
+    <button id="btnRestart" class="bar-btn"><svg><use href="#ic-restart"/></svg>Restart</button>
+    <button id="btnNew" class="bar-btn"><svg><use href="#ic-new"/></svg>New</button>
+  </nav>
+  <section id="win" class="win" role="dialog" aria-label="Solved" hidden>
+    <div class="win-top">
+      <svg><use href="#hero"/></svg>
+      <div><small id="winKick"></small><h2 id="winTitle" class="fun"></h2><p id="winLine"></p><p id="winStats" class="tally"></p></div>
+      <button id="winClose" class="x-btn" aria-label="Look at the board">×</button>
+    </div>
+    <div class="win-go fun">
+      <button id="winNext" class="pill main big">Next level</button>
+      <button id="skip3" class="skip" aria-label="Skip 3 levels">+3</button>
+      <button id="skip5" class="skip" aria-label="Skip 5 levels">+5</button>
+      <button id="skip10" class="skip" aria-label="Skip 10 levels">+10</button>
+    </div>
+    <button id="winHome" class="win-home fun">Main screen</button>
+  </section>
+</div>
+
+<main id="home" class="home fun" aria-label="Main screen" hidden>
+  <div class="home-in">
+    <svg class="home-art" viewBox="0 0 120 150" aria-hidden="true"><use href="#hero"/></svg>
+    <h1>Playing Possum</h1>
+    <p id="homeWhere" class="home-where"></p>
+    <button id="homePlay" class="pill main big" aria-label="Play">Play</button>
+    <div class="home-two">
+      <button id="homeLevels" class="pill" aria-expanded="false">Choose level</button>
+      <button id="homeFree" class="pill" aria-expanded="false">Free play</button>
+    </div>
+    <div id="homeLevelBox" class="home-box" hidden>
+      <div id="homeStage" class="chips"></div>
+      <button id="homeLevelGo" class="pill main"></button>
+    </div>
+    <div id="homeFreeBox" class="home-box" hidden>
+      <span class="lbl">Board size</span>
+      <div id="homeSize" class="chips"></div>
+      <div id="homeDiff" class="chips"></div>
+      <button id="homeFreeGo" class="pill main"></button>
+    </div>
+    <div class="home-two">
+      <button id="homeSettings" class="pill">Settings</button>
+      <button id="homeHow" class="pill">How to play</button>
+    </div>
+    <p id="homeBest" class="home-best"></p>
+  </div>
+</main>
+
+<div id="settings" class="veil" hidden>
+  <div class="card" role="dialog" aria-label="Settings">
+    <div class="card-head"><h2 class="fun">Settings</h2><button id="setDone" class="pill main fun">Done</button></div>
+    <div class="row"><span class="lbl">Play</span><div id="optMode" class="chips"></div></div>
+    <div class="row" id="rowStage"><span class="lbl">Level (each one a little harder)</span><div id="optStage" class="chips"></div></div>
+    <div class="row" id="rowSize"><span class="lbl">Free play: board size</span><div id="optSize" class="chips"></div></div>
+    <div class="row" id="rowLevel"><span class="lbl">Free play: difficulty</span><div id="optLevel" class="chips"></div></div>
+    <div class="row"><span class="lbl">Color theme</span><div id="optTheme" class="chips"></div></div>
+    <div class="row"><span class="lbl">Mark for "no opossum"</span><div id="optMarks" class="chips"></div></div>
+    <div id="optToggles" class="toggles"></div>
+    <div id="shelf" class="shelf"></div>
+    <div class="two-btn fun"><button id="setHow" class="pill">How to play</button><button id="setDone2" class="pill main">Done</button></div>
+  </div>
+</div>
+
+<div id="how" class="veil mid" hidden>
+  <div class="card" role="dialog" aria-label="How to play">
+    <svg class="hero"><use href="#hero"/></svg>
+    <h2 class="fun">Playing Possum</h2>
+    <ul class="rules">
+      <li><span>1</span><div>Hide <b>one opossum</b> in every row, every column and every color.</div></li>
+      <li><span>2</span><div>Opossums <b>never touch</b>, not even at a corner.</div></li>
+      <li><span>3</span><div><b>Tap</b> for an X (tap again to clear it). <b>Double-tap</b> for an opossum. <b>Swipe</b> along a row or column to paint X's; it stays on that line.</div></li>
+      <li><span>4</span><div>Stuck? <b>Hint</b> is unlimited. Fewer slips earn sillier praise.</div></li>
+    </ul>
+    <button id="howOk" class="pill main big fun">Got it</button>
+  </div>
+</div>
+
+<div id="ask" class="veil mid" hidden>
+  <div class="card ask" role="dialog" aria-label="Leave this puzzle?">
+    <h2 class="fun">Leave this puzzle?</h2>
+    <p>You're in the middle of it, and a new one will wipe it away.</p>
+    <button id="askStay" class="pill main fun">Keep playing</button>
+    <button id="askGo" class="pill fun">Start new</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* CORE-START: puzzle logic. No DOM in here, so it also runs in Node for tests. */
+const Core = (() => {
+  'use strict';
+
+  // ---------- small helpers ----------
+  const popc = (x) => { x -= (x >>> 1) & 0x55555555; x = (x & 0x33333333) + ((x >>> 2) & 0x33333333); return (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24; };
+  const shuffle = (a, rnd) => { for (let i = a.length - 1; i > 0; i--) { const j = (rnd() * (i + 1)) | 0; const t = a[i]; a[i] = a[j]; a[j] = t; } return a; };
+  const seeded = (seed) => () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const setBit = (b, i) => { b[i >>> 5] |= 1 << (i & 31); };
+  const clearBit = (b, i) => { b[i >>> 5] &= ~(1 << (i & 31)); };
+  const hasBit = (b, i) => (b[i >>> 5] >>> (i & 31)) & 1;
+  const listBits = (b, N) => { const out = []; for (let i = 0; i < N; i++) if (hasBit(b, i)) out.push(i); return out; };
+
+  // ---------- geometry of one puzzle ----------
+  // Groups: 0..n-1 are rows, n..2n-1 are columns, 2n..3n-1 are areas.
+  // Every set of squares is a bitset (Uint32Array) so the solver stays fast on a phone.
+  function makeGeo(n, reg) {
+    const N = n * n, W = (N + 31) >>> 5, G = 3 * n;
+    const cells = Array.from({ length: G }, () => []);
+    for (let i = 0; i < N; i++) { cells[(i / n) | 0].push(i); cells[n + (i % n)].push(i); cells[2 * n + reg[i]].push(i); }
+    const bits = cells.map((list) => { const b = new Uint32Array(W); for (const i of list) setBit(b, i); return b; });
+    const peers = [];   // peers[i]: every square an opossum on i rules out
+    for (let i = 0; i < N; i++) {
+      const r = (i / n) | 0, c = i % n, b = new Uint32Array(W);
+      for (let w = 0; w < W; w++) b[w] = bits[r][w] | bits[n + c][w] | bits[2 * n + reg[i]][w];
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const x = r + dr, y = c + dc; if (x >= 0 && y >= 0 && x < n && y < n) setBit(b, x * n + y); }
+      clearBit(b, i);
+      peers.push(b);
+    }
+    return { n, N, W, G, reg, cells, bits, peers };
+  }
+  const groupsOf = (geo, i) => [(i / geo.n) | 0, geo.n + (i % geo.n), 2 * geo.n + geo.reg[i]];
+
+  // ---------- brute-force solver (used to check foreign puzzles and to repair new ones) ----------
+  // Returns the first solution that is different from `avoid` (or the first one if avoid is null), else null.
+  function bruteSolve(n, reg, avoid) {
+    const colUsed = new Uint8Array(n), regUsed = new Uint8Array(n), sol = new Array(n).fill(-1);
+    const rec = (r, differs) => {
+      if (r === n) return differs;
+      for (let c = 0; c < n; c++) {
+        if (colUsed[c]) continue;
+        const g = reg[r * n + c];
+        if (regUsed[g]) continue;
+        if (r > 0 && Math.abs(sol[r - 1] - c) <= 1) continue;
+        colUsed[c] = regUsed[g] = 1; sol[r] = c;
+        if (rec(r + 1, differs || !avoid || avoid[r] !== c)) return true;
+        colUsed[c] = regUsed[g] = 0; sol[r] = -1;
+      }
+      return false;
+    };
+    return rec(0, !avoid) ? sol.slice() : null;
+  }
+
+  // ---------- the logic solver: one technique at a time ----------
+  // A logic state is { open: bitset of squares that could still hold an opossum, has: Uint8Array per group (1 = has its opossum) }.
+  // Each finder returns steps: { tech, action: 'x' | 'possum', cells: [...], ...details for the hint text }.
+
+  function openCount(geo, st, g) { let k = 0; const b = geo.bits[g]; for (let w = 0; w < geo.W; w++) k += popc(st.open[w] & b[w]); return k; }
+  function openIn(geo, st, g) { const out = []; for (const i of geo.cells[g]) if (hasBit(st.open, i)) out.push(i); return out; }
+
+  // "Only one open square left" in a row, column or area.
+  function findSingles(geo, st, all) {
+    const out = [], seen = new Set();
+    const order = [];
+    for (let a = 0; a < geo.n; a++) order.push(2 * geo.n + a);
+    for (let g = 0; g < 2 * geo.n; g++) order.push(g);
+    for (const g of order) {
+      if (st.has[g] || openCount(geo, st, g) !== 1) continue;
+      const i = openIn(geo, st, g)[0];
+      if (seen.has(i)) continue;
+      seen.add(i);
+      out.push({ tech: 'single', action: 'possum', cells: [i], g });
+      if (!all) return out;
+    }
+    return out;
+  }
+
+  // One area whose open squares all sit in one line owns that line (and the other way round).
+  function findConfine(geo, st, all) {
+    const out = [], n = geo.n;
+    const take = (owner, target) => {   // open squares of `target` that are not in `owner` must be X
+      const cells = [];
+      for (const i of geo.cells[target]) if (hasBit(st.open, i) && !hasBit(geo.bits[owner], i)) cells.push(i);
+      if (cells.length) out.push({ tech: 'confine', action: 'x', cells, g: owner, into: target });
+    };
+    for (let g = 0; g < geo.G; g++) {
+      if (st.has[g]) continue;
+      const open = openIn(geo, st, g);
+      if (open.length < 2) continue;
+      const kinds = g < n ? [2] : g < 2 * n ? [2] : [0, 1];   // a line can sit inside one area; an area inside one row or column
+      for (const kind of kinds) {
+        const of = (i) => groupsOf(geo, i)[kind];
+        const t = of(open[0]);
+        if (open.every((i) => of(i) === t)) { take(g, t); if (out.length && !all) return out; }
+      }
+    }
+    return out;
+  }
+
+  // "An opossum here would leave that row / column / area with no square."
+  function findBlocks(geo, st, all) {
+    const out = [], byVictim = new Map();
+    for (let i = 0; i < geo.N; i++) {
+      if (!hasBit(st.open, i)) continue;
+      const mine = groupsOf(geo, i), p = geo.peers[i];
+      for (let g = 0; g < geo.G; g++) {
+        if (st.has[g] || g === mine[0] || g === mine[1] || g === mine[2]) continue;
+        const b = geo.bits[g];
+        let alive = 0, any = 0;
+        for (let w = 0; w < geo.W; w++) { const o = st.open[w] & b[w]; any |= o; alive |= o & ~p[w]; }
+        if (any && !alive) {
+          if (!byVictim.has(g)) { const s = { tech: 'block', action: 'x', cells: [], g }; byVictim.set(g, s); out.push(s); }
+          byVictim.get(g).cells.push(i);
+          break;
+        }
+      }
+      if (out.length && !all && byVictim.size > 1) break;
+    }
+    return all ? out : out.slice(0, 1);
+  }
+
+  // Several areas that fit inside the same number of neighboring lines own those lines (and the other way round).
+  // minU..maxU: how many lines/areas are in the group (2 = a pair).
+  function findGroups(geo, st, all, minU, maxU) {
+    const out = [], n = geo.n;
+    for (let axis = 0; axis < 2; axis++) {
+      const lineOf = (i) => (axis ? i % n : (i / n) | 0);
+      const areaLines = new Int32Array(n), lineAreas = new Int32Array(n);
+      for (let i = 0; i < geo.N; i++) if (hasBit(st.open, i)) { areaLines[geo.reg[i]] |= 1 << lineOf(i); lineAreas[lineOf(i)] |= 1 << geo.reg[i]; }
+      let unsolvedLines = 0;
+      for (let l = 0; l < n; l++) if (!st.has[axis * n + l]) unsolvedLines++;
+      for (let len = 2; len < n; len++) for (let a = 0; a + len <= n; a++) {
+        const b = a + len - 1;
+        if (st.has[axis * n + a] || st.has[axis * n + b]) continue;
+        let u = 0, range = 0, touch = 0;
+        const lines = [];
+        for (let l = a; l <= b; l++) { range |= 1 << l; if (!st.has[axis * n + l]) { u++; lines.push(l); touch |= lineAreas[l]; } }
+        if (u < minU || u > maxU || u >= unsolvedLines) continue;
+        let inside = 0, insideCount = 0;
+        for (let ar = 0; ar < n; ar++) if (!st.has[2 * n + ar] && areaLines[ar] && !(areaLines[ar] & ~range)) { inside |= 1 << ar; insideCount++; }
+        if (insideCount === u) {   // these areas own these lines: nothing else can sit in the lines
+          const cells = [];
+          for (let i = 0; i < geo.N; i++) if (hasBit(st.open, i) && (range >>> lineOf(i)) & 1 && !((inside >>> geo.reg[i]) & 1)) cells.push(i);
+          if (cells.length) { out.push({ tech: u === 2 ? 'pair' : 'group', action: 'x', cells, axis, lines, areas: inside, u, owner: 'areas' }); if (!all) return out; }
+        }
+        if (popc(touch) === u) {   // these lines own these areas: the areas can't be used outside the lines
+          const cells = [];
+          for (let i = 0; i < geo.N; i++) if (hasBit(st.open, i) && (touch >>> geo.reg[i]) & 1 && !((range >>> lineOf(i)) & 1)) cells.push(i);
+          if (cells.length) { out.push({ tech: u === 2 ? 'pair' : 'group', action: 'x', cells, axis, lines, areas: touch, u, owner: 'lines' }); if (!all) return out; }
+        }
+      }
+    }
+    return out;
+  }
+
+  // "What if": put an opossum here, follow the forced moves, and see a row / column / area run out of squares.
+  function findChains(geo, st, all) {
+    const out = [], W = geo.W, G = geo.G;
+    const open = new Uint32Array(W), has = new Uint8Array(G);
+    for (let i = 0; i < geo.N; i++) {
+      if (!hasBit(st.open, i)) continue;
+      open.set(st.open); has.set(st.has);
+      const put = (j) => { const p = geo.peers[j]; for (let w = 0; w < W; w++) open[w] &= ~p[w]; clearBit(open, j); for (const g of groupsOf(geo, j)) has[g] = 1; };
+      put(i);
+      let dead = -1, steps = 0;
+      for (let again = true; again && dead < 0;) {
+        again = false;
+        for (let g = 0; g < G && dead < 0; g++) {
+          if (has[g]) continue;
+          const b = geo.bits[g];
+          let k = 0, last = -1;
+          for (let w = 0; w < W; w++) { const o = open[w] & b[w]; if (o) { k += popc(o); last = w * 32 + (31 - Math.clz32(o)); } }
+          if (k === 0) dead = g;
+          else if (k === 1) { put(last); steps++; again = true; }
+        }
+      }
+      if (dead >= 0) { out.push({ tech: 'chain', action: 'x', cells: [i], g: dead, steps }); if (!all) return out; }
+    }
+    return out;
+  }
+
+  // ---------- rating: how hard is this puzzle for a person? ----------
+  // Solves with the easiest technique that works at each moment. level: 1 easy, 2 medium, 3 hard. solved=false means logic alone got stuck.
+  // givens: squares that already hold an opossum when the puzzle starts (big boards only).
+  function rate(geo, maxLevel, givens) {
+    maxLevel = maxLevel || 3;
+    const st = { open: new Uint32Array(geo.W).fill(0xffffffff), has: new Uint8Array(geo.G) };
+    for (let i = geo.N; i < geo.W * 32; i++) clearBit(st.open, i);
+    let placed = 0, level = 1;
+    const used = { single: 0, confine: 0, block: 0, pair: 0, group: 0, chain: 0 };
+    const apply = (steps) => {
+      for (const s of steps) {
+        used[s.tech]++;
+        if (s.action === 'possum') { const i = s.cells[0]; if (!hasBit(st.open, i)) continue; const p = geo.peers[i]; for (let w = 0; w < geo.W; w++) st.open[w] &= ~p[w]; clearBit(st.open, i); for (const g of groupsOf(geo, i)) st.has[g] = 1; placed++; }
+        else for (const i of s.cells) clearBit(st.open, i);
+      }
+      return steps.length > 0;
+    };
+    if (givens && givens.length) { apply(givens.map((i) => ({ tech: 'single', action: 'possum', cells: [i] }))); used.single = 0; }
+    for (let guard = 0; guard < 2000 && placed < geo.n; guard++) {
+      if (apply(findSingles(geo, st, true))) continue;
+      if (apply(findConfine(geo, st, true))) continue;
+      if (maxLevel < 2) break;
+      if (apply(findBlocks(geo, st, true))) { level = Math.max(level, 2); continue; }
+      if (apply(findGroups(geo, st, true, 2, 2))) { level = Math.max(level, 2); continue; }
+      if (maxLevel < 3) break;
+      if (apply(findGroups(geo, st, true, 3, 12))) { level = 3; continue; }
+      if (apply(findChains(geo, st, true))) { level = 3; continue; }
+      break;
+    }
+    let left = 0;
+    for (let w = 0; w < geo.W; w++) left += popc(st.open[w]);
+    return { solved: placed === geo.n, level, used, left, st };
+  }
+
+  // ---------- hints for the board as the player has it ----------
+  // marks: Uint8Array per square (0 empty, 1 X, 2 opossum). sol[row] = column of the true opossum.
+  // Returns a step, or null when the board is solved. A wrong mark always comes first.
+  function nextHint(geo, marks, sol) {
+    const n = geo.n;
+    const isSol = (i) => sol[(i / n) | 0] === i % n;
+    const possums = [];
+    for (let i = 0; i < geo.N; i++) if (marks[i] === 2) possums.push(i);
+    if (possums.length === n && possums.every(isSol)) return null;
+    // 1. an opossum that should not be there (prefer one that visibly breaks a rule)
+    const wrong = possums.filter((i) => !isSol(i));
+    if (wrong.length) {
+      for (const i of wrong) for (const j of possums) if (j !== i && hasBit(geo.peers[i], j)) return { tech: 'wrongPossum', action: 'remove', cells: [i], clash: j };
+      return { tech: 'wrongPossum', action: 'remove', cells: [wrong[0]], clash: -1 };
+    }
+    // 2. an X on a square that needs an opossum
+    for (let i = 0; i < geo.N; i++) if (marks[i] === 1 && isSol(i)) return { tech: 'wrongX', action: 'remove', cells: [i] };
+    // 3. plain logic, easiest first
+    const st = { open: new Uint32Array(geo.W), has: new Uint8Array(geo.G) };
+    for (let i = 0; i < geo.N; i++) if (marks[i] === 0) setBit(st.open, i);
+    for (const i of possums) for (const g of groupsOf(geo, i)) st.has[g] = 1;
+    for (const i of possums) {
+      const cells = [];
+      for (let j = 0; j < geo.N; j++) if (hasBit(st.open, j) && hasBit(geo.peers[i], j)) cells.push(j);
+      if (cells.length) return { tech: 'basic', action: 'x', cells, possum: i };
+    }
+    const tries = [
+      () => findSingles(geo, st, false),
+      () => findConfine(geo, st, false),
+      () => findBlocks(geo, st, false),
+      () => findGroups(geo, st, false, 2, 2),
+      () => findGroups(geo, st, false, 3, 12),
+      () => findChains(geo, st, false),
+    ];
+    for (const t of tries) { const s = t(); if (s.length) return s[0]; }
+    // 4. logic ran dry (only on puzzles from elsewhere): show a square from the answer
+    let best = -1, bestOpen = 99;
+    for (let r = 0; r < n; r++) { if (st.has[r]) continue; const k = openCount(geo, st, r); if (k < bestOpen) { bestOpen = k; best = r; } }
+    return { tech: 'reveal', action: 'possum', cells: [best * n + sol[best]], g: best };
+  }
+
+  // ---------- making puzzles ----------
+  function randomSolution(n, rnd) {
+    const sol = new Array(n).fill(-1), used = new Uint8Array(n);
+    const rec = (r) => {
+      if (r === n) return true;
+      for (const c of shuffle([...Array(n).keys()], rnd)) {
+        if (used[c] || (r > 0 && Math.abs(sol[r - 1] - c) <= 1)) continue;
+        used[c] = 1; sol[r] = c;
+        if (rec(r + 1)) return true;
+        used[c] = 0; sol[r] = -1;
+      }
+      return false;
+    };
+    rec(0);
+    return sol;
+  }
+
+  // Grow N areas outward from the opossums, at different speeds so sizes vary.
+  function growAreas(n, sol, rnd, style) {
+    const N = n * n, reg = new Int8Array(N).fill(-1), speed = [];
+    const spread = style === 0 ? 4.5 : style === 2 ? 1.4 : 3;
+    for (let r = 0; r < n; r++) { reg[r * n + sol[r]] = r; speed.push(0.35 + Math.pow(rnd(), 2.2) * spread); }
+    let left = N - n;
+    const near = (i) => { const r = (i / n) | 0, c = i % n, out = []; if (r > 0) out.push(i - n); if (r < n - 1) out.push(i + n); if (c > 0) out.push(i - 1); if (c < n - 1) out.push(i + 1); return out; };
+    while (left > 0) {
+      let total = 0;
+      for (let a = 0; a < n; a++) total += speed[a];
+      let pick = rnd() * total, a = 0;
+      for (; a < n - 1; a++) { pick -= speed[a]; if (pick <= 0) break; }
+      const options = [];
+      for (let i = 0; i < N; i++) {
+        if (reg[i] !== -1) continue;
+        let touch = 0;
+        for (const j of near(i)) if (reg[j] === a) touch++;
+        if (touch) for (let k = 0; k < touch * touch; k++) options.push(i);   // squares hugging the area are likelier: fewer stringy shapes
+      }
+      if (!options.length) { speed[a] = 0; continue; }
+      reg[options[(rnd() * options.length) | 0]] = a;
+      left--;
+    }
+    return reg;
+  }
+
+  function staysConnected(n, reg, a, without) {
+    const N = n * n;
+    let start = -1, size = 0;
+    for (let i = 0; i < N; i++) if (reg[i] === a && i !== without) { size++; if (start < 0) start = i; }
+    if (start < 0) return false;
+    const seen = new Uint8Array(N), stack = [start];
+    seen[start] = 1;
+    let got = 0;
+    while (stack.length) {
+      const i = stack.pop(); got++;
+      const r = (i / n) | 0, c = i % n;
+      const tryCell = (j) => { if (j !== without && reg[j] === a && !seen[j]) { seen[j] = 1; stack.push(j); } };
+      if (r > 0) tryCell(i - n); if (r < n - 1) tryCell(i + n); if (c > 0) tryCell(i - 1); if (c < n - 1) tryCell(i + 1);
+    }
+    return got === size;
+  }
+
+  // Search for an answer other than the intended one, starting from where plain logic got stuck.
+  // Returns its squares, or null if there is none (or 'unsure' if the search is cut short).
+  function findOtherAnswer(geo, st, sol, budget) {
+    const W = geo.W, G = geo.G, n = geo.n;
+    let nodes = 0, cut = false;
+    const rec = (open, has, differs) => {
+      if (++nodes > budget) { cut = true; return null; }
+      let bestG = -1, bestK = 1e9, unsolved = 0;
+      for (let g = 0; g < G; g++) {
+        if (has[g]) continue;
+        unsolved++;
+        const b = geo.bits[g];
+        let k = 0;
+        for (let w = 0; w < W; w++) k += popc(open[w] & b[w]);
+        if (k === 0) return null;
+        if (k < bestK) { bestK = k; bestG = g; }
+      }
+      if (!unsolved) return differs ? [] : null;
+      for (const i of geo.cells[bestG]) {
+        if (!hasBit(open, i)) continue;
+        const open2 = new Uint32Array(W), has2 = new Uint8Array(has), p = geo.peers[i];
+        for (let w = 0; w < W; w++) open2[w] = open[w] & ~p[w];
+        clearBit(open2, i);
+        for (const g of groupsOf(geo, i)) has2[g] = 1;
+        const res = rec(open2, has2, differs || sol[(i / n) | 0] !== i % n);
+        if (res) { res.push(i); return res; }
+        if (cut) return null;
+      }
+      return null;
+    };
+    const res = rec(st.open, st.has, false);
+    return res || (cut ? 'unsure' : null);
+  }
+
+  // Area ids in reading order (top-left area is 0), so equal puzzles look equal.
+  function tidyIds(n, reg) {
+    const map = new Int8Array(n).fill(-1); let next = 0;
+    const out = new Int8Array(reg.length);
+    for (let i = 0; i < reg.length; i++) { if (map[reg[i]] < 0) map[reg[i]] = next++; out[i] = map[reg[i]]; }
+    return out;
+  }
+
+  // One attempt at a puzzle of level `want` (1 easy, 2 medium, 3 hard). A generator, so the page can pause it:
+  // it yields between rounds and finally returns { n, reg, sol, level, used }, or null if this attempt did not work out.
+  // It grows areas around a random answer, then keeps nudging area borders until logic of that level can finish the board.
+  // (Logic can only finish a board that has one answer, so every puzzle made here has exactly one.)
+  function* attempt(n, rnd, want, nGiven) {
+    const N = n * n, sol = randomSolution(n, rnd);
+    const givens = shuffle([...Array(n).keys()], rnd).slice(0, nGiven || 0).map((r) => r * n + sol[r]);
+    const reg = growAreas(n, sol, rnd, want - 1);
+    const sizes = new Array(n).fill(0);
+    for (let i = 0; i < N; i++) sizes[reg[i]]++;
+    const minKeep = 2;   // never shrink an area below this
+    let r = null;
+    for (let round = 0; round < (n > 12 ? 260 : 160); round++) {
+      yield null;   // lets the page breathe between rounds
+      const geo = makeGeo(n, reg);
+      r = rate(geo, want, givens);
+      if (r.solved) break;
+      // Stuck: find a second answer and break it by handing one of its squares to a neighboring area.
+      const other = findOtherAnswer(geo, r.st, sol, 4000);
+      let pool;
+      if (other === 'unsure') return null;
+      if (other) pool = other.filter((i) => sol[(i / n) | 0] !== i % n);
+      else { pool = []; for (let i = 0; i < N; i++) if (hasBit(r.st.open, i) && sol[(i / n) | 0] !== i % n) pool.push(i); }   // one answer, but too hard: simplify
+      shuffle(pool, rnd);
+      const tryMove = (x) => {
+        const a = reg[x], row = (x / n) | 0, c = x % n, around = [];
+        if (sizes[a] <= minKeep || sol[row] === c) return false;
+        if (row > 0) around.push(x - n); if (row < n - 1) around.push(x + n); if (c > 0) around.push(x - 1); if (c < n - 1) around.push(x + 1);
+        const others = shuffle([...new Set(around.map((j) => reg[j]).filter((b) => b !== a))], rnd);
+        if (!others.length || !staysConnected(n, reg, a, x)) return false;
+        reg[x] = others[0]; sizes[a]--; sizes[others[0]]++;
+        return true;
+      };
+      let moved = false;
+      for (const x of pool) if (tryMove(x)) { moved = true; break; }
+      if (!moved) {   // those squares are boxed in: nudge a border next to one of them instead
+        const near = new Set();
+        for (const x of pool) { const row = (x / n) | 0, c = x % n; for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) { const y = row + dr, z = c + dc; if (y >= 0 && z >= 0 && y < n && z < n) near.add(y * n + z); } }
+        for (const x of shuffle([...near], rnd)) if (tryMove(x)) { moved = true; break; }
+      }
+      if (!moved) return null;
+      r = null;
+    }
+    if (!r || !r.solved) return null;
+    const tiny = sizes.filter((s) => s === 1).length;
+    if (tiny > (n >= 7 ? 1 : 0) || Math.max(...sizes) > N * 0.42) return null;   // no freebies, no giant blob
+    return { n, reg: tidyIds(n, reg), sol, level: r.level, used: r.used, givens };
+  }
+
+  const tryMake = (n, rnd, want, nGiven) => { const it = attempt(n, rnd, want, nGiven); let s; do { s = it.next(); } while (!s.done); return s.value; };
+
+  return { seeded, shuffle, hasBit, makeGeo, groupsOf, bruteSolve, rate, nextHint, attempt, tryMake };
+})();
+/* CORE-END */
+
+/* ================================================================================================
+   THE PAGE. Sections: 1 themes  2 settings + storage  3 levels + ratings  4 game state  5 drawing
+                       6 touch  7 hints  8 puzzle maker  9 buttons + panels  10 sound  11 test hook  12 start
+   ================================================================================================ */
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const board = $('board'), wrap = $('wrap');
+  const MAX = 16;   // biggest board
+
+  /* ---------- 1. Themes ---------- */
+  // Sixteen area colors per theme, always in this order, so a hint can call an area by its color name.
+  const AREA_NAMES = ['red', 'orange', 'yellow', 'lime', 'green', 'teal', 'sky', 'blue', 'purple', 'pink', 'brown', 'gray', 'cream', 'olive', 'plum', 'steel'];
+  const THEMES = {
+    meadow: { label: 'Meadow', bar: '#f3efe6', areas: ['#f28b82', '#fbb36b', '#f9e26e', '#c3e06f', '#7fd49a', '#58cdc2', '#93d4fb', '#8aa4f6', '#c2a2f5', '#f7a9de', '#d3b58d', '#cbd0d8', '#f4ecd2', '#a8ad62', '#b07bb8', '#7d9cbd'] },
+    night: { label: 'Night', bar: '#12141c', areas: ['#c2564f', '#c9813a', '#bfa62f', '#84a53b', '#3f9c63', '#2f968e', '#3f97c9', '#506ecb', '#8361cc', '#be62a6', '#93744e', '#727a89', '#a89f84', '#5f6b2c', '#6b3f73', '#3d5878'] },
+    bold: { label: 'Bold', bar: '#ffffff', areas: ['#ff6259', '#ff9a3d', '#ffdc3a', '#b3e545', '#31cf74', '#19c2ad', '#4cc9ff', '#5f81ff', '#a970ff', '#ff7cc8', '#bd8d5e', '#aeb6c2', '#f6edc4', '#96a321', '#a44fb3', '#5d86b5'] },
+  };
+  const COLOR_ORDER = [0, 6, 2, 4, 8, 1, 9, 5, 10, 7, 3, 11, 12, 14, 13, 15];   // which colors a small board uses first (far apart ones)
+  const rgb = (hex) => [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16));
+  const COLOR_GAP = THEMES.meadow.areas.map((a) => THEMES.meadow.areas.map((b) => { const x = rgb(a), y = rgb(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]); }));
+
+  // Give each area a color so that areas that touch look as different as possible. Same puzzle, same colors.
+  function assignColors(n, reg) {
+    const touch = [];
+    for (let i = 0; i < n * n; i++) {
+      if (i % n < n - 1 && reg[i] !== reg[i + 1]) touch.push([reg[i], reg[i + 1]]);
+      if (i < n * n - n && reg[i] !== reg[i + n]) touch.push([reg[i], reg[i + n]]);
+    }
+    let seed = 7;
+    for (let i = 0; i < n * n; i++) seed = (Math.imul(seed, 31) + reg[i] + 1) | 0;
+    const rnd = Core.seeded(seed), pick = COLOR_ORDER.slice(0, Math.min(n, 16));
+    while (pick.length < n) pick.push(pick.length % 16);
+    let best = pick, bestScore = -1;
+    for (let t = 0; t < 250; t++) {
+      const perm = Core.shuffle(pick.slice(), rnd);
+      let min = 1e9, sum = 0;
+      for (const [a, b] of touch) { const d = COLOR_GAP[perm[a]][perm[b]]; if (d < min) min = d; sum += d; }
+      const score = min * 1000 + sum / (touch.length || 1);
+      if (score > bestScore) { bestScore = score; best = perm; }
+    }
+    return best;
+  }
+  const areaHex = (a) => THEMES[settings.theme].areas[game.colors[a]];
+  const areaName = (a) => AREA_NAMES[game.colors[a]];
+
+  /* ---------- 2. Settings and storage ---------- */
+  const LEVELS = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+  // mode: 'levels' climbs level by level (stage = the level number); 'free' uses size and level (difficulty) below.
+  const settings = { mode: 'levels', stage: 1, size: 8, level: 2, theme: 'meadow', marks: 'x', autoX: true, mistakes: true, timer: true, sound: false, buzz: false, best: 0 };   // best: highest level solved
+  let seenHow = false, solvedCount = 0, tally = [0, 0, 0, 0, 0, 0];
+
+  // localStorage can be missing or blocked; the game then simply forgets when the page closes.
+  const Store = (() => {
+    const KEY = 'playing-possum-v1';
+    let ok = true;
+    return {
+      read() { try { const s = window.localStorage.getItem(KEY); return s ? JSON.parse(s) : null; } catch (e) { ok = false; return null; } },
+      write(o) { if (!ok) return; try { window.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { ok = false; } },
+    };
+  })();
+  const packMarks = (g) => { let s = ''; for (let i = 0; i < g.marks.length; i++) s += g.marks[i] === 1 && g.auto[i] ? 3 : g.marks[i]; return s; };
+  const unpackMarks = (g, s) => { for (let i = 0; i < g.marks.length; i++) { const v = +s[i] || 0; g.marks[i] = v === 3 ? 1 : v; g.auto[i] = v === 3 ? 1 : 0; } };
+  function save() {
+    const g = game && { n: game.n, reg: Array.from(game.reg), sol: game.sol, level: game.level, stage: game.stage, givens: game.givens, marks: packMarks(game), history: game.history.slice(-300), elapsed: Math.round(elapsedNow()), started: game.started, solved: game.solved, slips: game.slips, hints: game.hints, rated: game.rated };
+    Store.write({ settings, seenHow, solvedCount, tally, game: g });
+  }
+  function restore() {
+    const d = Store.read();
+    if (!d) return false;
+    if (d.settings) for (const k in settings) if (typeof d.settings[k] === typeof settings[k]) settings[k] = d.settings[k];
+    if (!THEMES[settings.theme]) settings.theme = 'meadow';
+    settings.size = Math.min(MAX, Math.max(5, settings.size | 0)) || 8;
+    settings.stage = Math.max(1, settings.stage | 0) || 1;
+    if (settings.mode !== 'free') settings.mode = 'levels';
+    if (!LEVELS[settings.level]) settings.level = 2;
+    seenHow = !!d.seenHow; solvedCount = d.solvedCount | 0;
+    if (Array.isArray(d.tally)) tally = tally.map((v, k) => d.tally[k] | 0);
+    const s = d.game;
+    if (!s || !(s.n >= 2) || !Array.isArray(s.reg) || s.reg.length !== s.n * s.n || typeof s.marks !== 'string' || s.marks.length !== s.reg.length) return false;
+    if (s.reg.some((a) => !(a >= 0 && a < s.n))) return false;
+    const g = makeGame({ n: s.n, reg: s.reg, sol: Array.isArray(s.sol) && s.sol.length === s.n ? s.sol : Core.bruteSolve(s.n, s.reg, null), level: s.level | 0, givens: Array.isArray(s.givens) ? s.givens : [] }, s.stage > 0 ? s.stage | 0 : null);
+    unpackMarks(g, s.marks);
+    g.history = Array.isArray(s.history) ? s.history.filter((h) => typeof h === 'string' && h.length === s.reg.length) : [];
+    g.elapsed = +s.elapsed || 0; g.started = !!s.started; g.solved = !!s.solved; g.slips = s.slips | 0; g.hints = s.hints | 0; g.rated = !!s.rated;
+    useGame(g, true);
+    return true;
+  }
+
+  /* ---------- 3. Levels and ratings ---------- */
+  // What each level is: board size and difficulty (1 easy, 2 medium, 3 hard). A gentle climb to level 30,
+  // big boards through 39, then "hard mode" for good, where size and difficulty keep changing.
+  const CLIMB = [[5, 1], [5, 1], [6, 1], [6, 1], [6, 2], [7, 1], [7, 2], [7, 2], [8, 1], [8, 2], [8, 2], [8, 3], [9, 2], [9, 2], [9, 3], [10, 2], [10, 2], [10, 3], [11, 2], [11, 3], [12, 2], [12, 3], [12, 3], [13, 2], [13, 3], [14, 2], [14, 3], [15, 2], [15, 3], [16, 2]];
+  function levelPlan(n) {
+    n = Math.max(1, n | 0);
+    if (n <= CLIMB.length) return { size: CLIMB[n - 1][0], difficulty: CLIMB[n - 1][1] };
+    if (n < 40) { const k = n - CLIMB.length; return { size: 12 + (k % 5), difficulty: k % 3 === 0 ? 2 : 3 }; }
+    const h = Math.imul(n, 2654435761) >>> 0;
+    return { size: 8 + (h % 9), difficulty: (h >>> 8) % 4 === 0 ? 2 : 3 };
+  }
+  // How it went, by slips (wrong opossums, and wrong X's that were left behind). Never a school grade.
+  // Each rating has a few lines, so the same result does not read the same every time.
+  const RATINGS = [
+    { upTo: 0, title: 'Possum Whisperer', lines: [
+      'Not one wrong move. The opossums are a little afraid of you.',
+      'Flawless. Somewhere, a raccoon is taking notes.',
+      'Zero slips. The opossums would like your secret, and also your snacks.'] },
+    { upTo: 1, title: 'One Tiny Oops', lines: [
+      'One slip. Everybody saw. Everybody is pretending they didn\'t.',
+      'A single oops. The opossums have agreed never to speak of it.',
+      'One wrong move. To be fair, that opossum was standing in a weird spot.'] },
+    { upTo: 3, title: 'Wobbly but Upright', lines: [
+      'A couple of stumbles on the branch. Stuck the landing anyway.',
+      'A few wobbles. Tails were used for balance. Nobody fell.',
+      'Two or three whoopsies. The judges are opossums, and easily impressed.'] },
+    { upTo: 7, title: 'Trash Can Detective', lines: [
+      'You rummaged through some wrong bins before finding dinner.',
+      'Several lids were lifted. Several were the wrong lids. Dinner was found.',
+      'You checked every bin on the street. Thorough! Loud, but thorough.'] },
+    { upTo: 15, title: 'Fainting Goat Energy', lines: [
+      'Several opossums played dead out of sympathy. They\'re fine. You\'re fine.',
+      'A lot went sideways. The opossums fainted twice and one wrote a will.',
+      'A bumpy ride. Everyone is lying very still until it\'s over.'] },
+    { upTo: 1e9, title: 'Well. You Tried.', lines: [
+      'That was less a puzzle and more a lifestyle. Solved is solved!',
+      'Hey, I guess you tried something. Many things, actually. One of them worked!',
+      'A million slips, give or take. The opossums admire the commitment.'] },
+  ];
+  const ratingStep = (slips) => RATINGS.findIndex((r) => slips <= r.upTo);
+  const lastLine = {};   // the line shown last time for each rating, so the next one differs
+  function ratingLine(step) {
+    const lines = RATINGS[step].lines;
+    let k = (Math.random() * lines.length) | 0;
+    if (k === lastLine[step]) k = (k + 1) % lines.length;
+    lastLine[step] = k;
+    return lines[k];
+  }
+
+  /* ---------- 4. Game state and rules ---------- */
+  // game: { n, reg (area id per square), sol (column per row), level (difficulty), stage (level number or null),
+  //         givens (squares that started with an opossum), marks (0 empty, 1 X, 2 opossum), auto (1 = that X was placed by auto-X),
+  //         history (undo steps), elapsed, started, solved, colors, slips (mistakes), hints (hints taken), rated }
+  let game = null, geo = null;
+  const ui = { cells: [], clash: null, hint: null, drag: null, px: 0, runFrom: 0, fresh: '' };
+
+  function makeGame(p, stage) {
+    const N = p.n * p.n, g = { n: p.n, reg: Int8Array.from(p.reg), sol: p.sol ? Array.from(p.sol) : null, level: p.level || 0, stage: stage || null, givens: (p.givens || []).slice(), given: new Uint8Array(N), marks: new Uint8Array(N), auto: new Uint8Array(N), history: [], elapsed: 0, started: false, solved: false, colors: assignColors(p.n, p.reg), slips: 0, hints: 0, rated: false };
+    for (const i of g.givens) { g.given[i] = 1; g.marks[i] = 2; }
+    return g;
+  }
+  // restored = the marks came from storage, so leave them exactly as saved.
+  function useGame(g, restored) {
+    game = g; geo = Core.makeGeo(g.n, g.reg);
+    ui.clash = new Uint8Array(g.n * g.n); ui.hint = null; ui.drag = null; ui.runFrom = 0;
+    if (!restored) for (const i of g.givens) placePossum(i);   // their automatic X's are there from the start
+    ui.fresh = freshMarks();
+    board.classList.remove('hinting', 'won'); $('perch').classList.remove('party', 'wiggle');
+    buildBoard(); refresh();
+    $('win').hidden = true;
+  }
+  // What the untouched board looks like (givens and their automatic X's), to tell whether the player has done anything.
+  function freshMarks() {
+    let s = '';
+    for (let i = 0; i < geo.N; i++) s += game.given[i] ? 2 : (settings.autoX && game.givens.some((g) => sees(g, i))) ? 3 : 0;
+    return s;
+  }
+  const inProgress = () => !!game && !game.solved && packMarks(game) !== ui.fresh && game.marks.some((m, i) => m && !game.given[i] && !(m === 1 && game.auto[i] && ui.fresh[i] === '3'));
+  const elapsedNow = () => (game ? game.elapsed + (ui.runFrom ? performance.now() - ui.runFrom : 0) : 0);
+  const sees = (i, j) => Core.hasBit(geo.peers[i], j);   // would an opossum on i rule out j?
+  const seenByPossum = (j) => { for (let i = 0; i < geo.N; i++) if (game.marks[i] === 2 && i !== j && sees(i, j)) return true; return false; };
+  const isHome = (i) => !!game.sol && game.sol[(i / game.n) | 0] === i % game.n;   // does an opossum belong here?
+
+  function pushUndo() { game.history.push(packMarks(game)); if (game.history.length > 500) game.history.shift(); }
+  function placePossum(i) {
+    game.marks[i] = 2; game.auto[i] = 0;
+    if (settings.autoX) for (let j = 0; j < geo.N; j++) if (game.marks[j] === 0 && sees(i, j)) { game.marks[j] = 1; game.auto[j] = 1; }
+  }
+  function removePossum(i) {
+    game.marks[i] = 0; game.auto[i] = 0;
+    for (let j = 0; j < geo.N; j++) if (game.marks[j] === 1 && game.auto[j] && !seenByPossum(j)) { game.marks[j] = 0; game.auto[j] = 0; }   // auto X's nobody needs any more
+    if (settings.autoX && seenByPossum(i)) { game.marks[i] = 1; game.auto[i] = 1; }
+  }
+  // An opossum that was there from the start cannot be moved: it shakes its head.
+  function refuse(i) {
+    const el = ui.cells[i];
+    el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope');
+    say('That one was here from the start. It stays.', null, null, true);
+  }
+  // Slips. Placing an opossum takes two taps on a square (X, then opossum), so an X on an opossum's square is
+  // not a slip yet: game.maybe remembers it, and it only counts once the player moves on and leaves it there.
+  function settle(i) {
+    const p = game.maybe;
+    if (p === undefined || p < 0 || p === i) return;
+    if (game.marks[p] === 1 && !game.auto[p] && isHome(p)) game.slips++;
+    game.maybe = -1;
+  }
+  // Taps. One tap: an empty square gets an X; an X is cleared; an opossum is picked up.
+  // A double tap (two quick taps on the same square): an opossum. The first tap acts at once, so nothing waits;
+  // the second tap puts the square back the way it was and places an opossum there instead. One undo step in all.
+  const DOUBLE_MS = 350;
+  let lastTap = null;   // the last single tap, while a second tap could still make it a double: { i, t, undoLen, maybe }
+  function tapSquare(i) {
+    if (!game || game.solved || i < 0 || i >= geo.N) return;
+    if (game.given[i]) { lastTap = null; refuse(i); return; }
+    const now = performance.now(), prev = lastTap;
+    lastTap = null;
+    if (prev && prev.i === i && now - prev.t < DOUBLE_MS && game.history.length === prev.undoLen) {
+      unpackMarks(game, game.history.pop());   // the square as it was before the first tap
+      game.maybe = prev.maybe;
+      if (game.marks[i] === 2) { changed('possum'); return; }   // it was an opossum already: it stays
+      pushUndo();
+      game.maybe = -1;
+      placePossum(i); if (game.sol && !isHome(i)) game.slips++;
+      changed('possum');
+      return;
+    }
+    settle(i);
+    const maybe = game.maybe;
+    pushUndo();
+    const m = game.marks[i];
+    if (m === 0) { game.marks[i] = 1; game.auto[i] = 0; if (isHome(i)) game.maybe = i; }
+    else if (m === 1) { game.marks[i] = 0; game.auto[i] = 0; if (game.maybe === i) game.maybe = -1; }
+    else removePossum(i);
+    lastTap = { i, t: now, undoLen: game.history.length, maybe };
+    changed(m === 0 ? 'x' : 'clear');
+  }
+  function isSolved() {
+    const n = game.n, rows = new Uint8Array(n), cols = new Uint8Array(n), areas = new Uint8Array(n);
+    let count = 0;
+    for (let i = 0; i < geo.N; i++) if (game.marks[i] === 2) {
+      count++;
+      if (rows[(i / n) | 0]++ || cols[i % n]++ || areas[game.reg[i]]++) return false;
+    }
+    if (count !== n) return false;
+    for (let i = 0; i < geo.N; i++) if (game.marks[i] === 2 && seenByPossum(i)) return false;
+    return true;
+  }
+  // Runs after every change to the marks.
+  function changed(kind) {
+    clearHint(); say('');
+    game.started = true;
+    const was = game.solved;
+    game.solved = isSolved();
+    refresh();
+    $('perch').classList.toggle('party', game.solved);
+    if (kind === 'possum' && !game.solved) { const pc = $('perch'); pc.classList.remove('wiggle'); void pc.offsetWidth; pc.classList.add('wiggle'); }
+    if (game.solved && !was) won(); else { feedback(kind); if (!game.solved) { $('win').hidden = true; board.classList.remove('won'); } }
+    runClock();
+    save();
+  }
+  function undo() {
+    if (!game || !game.history.length) return;
+    unpackMarks(game, game.history.pop());
+    game.maybe = -1;   // taking a move back is not a slip
+    clearHint(); game.solved = isSolved();
+    $('win').hidden = true; board.classList.remove('won'); $('perch').classList.remove('party');
+    refresh(); say(''); feedback('clear'); runClock(); save();
+  }
+  // Restart keeps the opossums that came with the puzzle, and keeps the slip count (no free do-overs).
+  function restart() {
+    if (!game || packMarks(game) === ui.fresh) return;
+    settle(-1);
+    pushUndo();
+    unpackMarks(game, ui.fresh);
+    changed('clear');
+    game.started = false; game.elapsed = 0; ui.runFrom = 0; showClock();   // the clock waits for the first move again
+    say('Board cleared.', 'Undo', undo); save();
+  }
+
+  /* ---------- 5. Drawing ---------- */
+  const tilt = (i) => ((i * 37) % 17) - 8;   // each X leans its own way, like a hand drew it
+  const markSvg = (kind, i) => kind === 'p' ? '<svg class="mk p" viewBox="0 0 64 64"><use href="#possum"/></svg>'
+    : kind === 'd' ? '<svg class="mk p" viewBox="0 0 64 64"><use href="#possum-dead"/></svg>'
+    : kind ? `<svg class="mk x${kind === 'a' ? ' auto' : ''}" viewBox="0 0 24 24" style="rotate:${tilt(i)}deg"><use href="#mark-${settings.marks === 'dot' ? 'dot' : 'x'}"/></svg>` : '';
+
+  function buildBoard() {
+    const n = game.n;
+    board.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+    board.textContent = '';
+    ui.cells = [];
+    for (let i = 0; i < n * n; i++) {
+      const d = document.createElement('div');
+      d.className = 'cell' + (game.given[i] ? ' given' : '');
+      d.setAttribute('role', 'gridcell');
+      d.style.background = areaHex(game.reg[i]);
+      d.style.setProperty('--d', (((i / n) | 0) + (i % n)) * 45 + 'ms');
+      board.appendChild(d);
+      ui.cells.push(d);
+    }
+    layout();
+  }
+  // The board is the biggest square that fits; its size is a whole number of pixels per square so lines stay crisp.
+  function layout() {
+    if (!game) return;
+    const n = game.n, st = $('stage');
+    const size = Math.max(n * 16, Math.floor((Math.min(st.clientWidth, st.clientHeight) - 6) / n) * n);
+    wrap.style.width = wrap.style.height = size + 'px';
+    ui.px = size / n;
+    const spare = st.clientHeight - size - 4, perch = $('perch');   // room above the board for the opossum on its branch
+    perch.hidden = spare < 72;
+    perch.firstElementChild.style.height = Math.min(spare - 12, 190) + 'px';
+    // thick lines between areas, drawn once on top of the squares
+    let d = '';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      const i = r * n + c;
+      if (c < n - 1 && game.reg[i] !== game.reg[i + 1]) d += `M${c + 1} ${r}v1`;
+      if (r < n - 1 && game.reg[i] !== game.reg[i + n]) d += `M${c} ${r + 1}h1`;
+    }
+    const w = Math.max(2, Math.min(4.6, ui.px * 0.085));
+    $('lines').setAttribute('viewBox', `0 0 ${n} ${n}`);
+    $('lines').innerHTML = `<path d="${d}" stroke-width="${w}"/><rect x="0" y="0" width="${n}" height="${n}" rx="${10 / ui.px}" stroke-width="${w + 0.8}"/>`;
+  }
+  function paintCell(i) {
+    const m = game.marks[i], el = ui.cells[i];
+    const kind = m === 2 ? (ui.clash[i] && settings.mistakes ? 'd' : 'p') : m === 1 ? (game.auto[i] ? 'a' : 'x') : '';
+    if (el._kind === kind) return;
+    el._kind = kind;
+    el.innerHTML = markSvg(kind, i);
+    el.classList.toggle('clash', kind === 'd');
+  }
+  // Redraw whatever changed, plus the counters and button states.
+  function refresh() {
+    let found = 0;
+    for (let i = 0; i < geo.N; i++) { ui.clash[i] = game.marks[i] === 2 && seenByPossum(i) ? 1 : 0; if (game.marks[i] === 2) found++; }
+    for (let i = 0; i < geo.N; i++) paintCell(i);
+    $('lvl').textContent = game.stage ? 'Level ' + game.stage : 'Free play';
+    $('what').textContent = `${game.n}×${game.n} · ${LEVELS[game.level] || 'Custom'}`;
+    $('found').textContent = `${found} of ${game.n}`;
+    $('btnUndo').disabled = !game.history.length;
+    $('btnHint').disabled = game.solved;
+    $('btnRestart').disabled = packMarks(game) === ui.fresh;
+    showClock();
+    if (!ui.note && !inProgress() && !game.solved) say(game.givens.length ? 'One opossum is already home (gold pin). Tap for an X, double-tap for an opossum.' : 'Tap for an X, double-tap for an opossum. Drag to paint X\'s.', null, null, true);
+  }
+  function repaintAll() { for (const el of ui.cells) el._kind = null; for (let i = 0; i < geo.N; i++) { ui.cells[i].style.background = areaHex(game.reg[i]); paintCell(i); } }
+  function applyTheme() {
+    document.documentElement.dataset.theme = settings.theme;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = THEMES[settings.theme].bar;
+    if (game) repaintAll();
+  }
+
+  // The one message line under the board. An optional button sits at its right end.
+  function say(text, button, onPress, soft) {
+    ui.note = text && !soft ? text : '';
+    $('noteText').textContent = text || '';
+    $('noteText').className = soft ? 'soft' : '';
+    const b = $('noteBtn');
+    b.hidden = !button;
+    b.textContent = button || '';
+    ui.noteAction = onPress || null;
+  }
+
+  // Clock: counts only while the page is showing and the puzzle is under way.
+  const fmt = (ms) => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  function showClock() { $('clock').hidden = !settings.timer; $('clock').textContent = fmt(elapsedNow()); }
+  function runClock() {
+    const should = game && game.started && !game.solved && !document.hidden && $('home').hidden;
+    if (should && !ui.runFrom) ui.runFrom = performance.now();
+    if (!should && ui.runFrom) { game.elapsed += performance.now() - ui.runFrom; ui.runFrom = 0; }
+  }
+  setInterval(() => { if (ui.runFrom && settings.timer) showClock(); }, 500);
+  document.addEventListener('visibilitychange', () => { runClock(); if (document.hidden) save(); });
+  window.addEventListener('pagehide', () => { runClock(); save(); });
+  window.addEventListener('resize', layout);
+
+  /* ---------- 6. Touch and mouse on the board ---------- */
+  // Tap or double-tap a square (see tapSquare). Drag = paint X's (or wipe X's, if the drag starts on an X). One drag is one undo step.
+  function squareAt(x, y) {
+    const b = board.getBoundingClientRect(), n = game.n;
+    const c = Math.floor((x - b.left) / (b.width / n)), r = Math.floor((y - b.top) / (b.height / n));
+    return r < 0 || c < 0 || r >= n || c >= n ? -1 : r * n + c;
+  }
+  // A swipe keeps to the row or column it sets off along, however the finger drifts: the square on that line
+  // nearest the finger (past either end of the line, the end square).
+  function lineSquare(g, x, y) {
+    const b = board.getBoundingClientRect(), n = game.n, r0 = (g.start / n) | 0, c0 = g.start % n;
+    const clamp = (v) => Math.max(0, Math.min(n - 1, v));
+    if (g.axis === 'row') return r0 * n + clamp(Math.floor((x - b.left) / (b.width / n)));
+    return clamp(Math.floor((y - b.top) / (b.height / n))) * n + c0;
+  }
+  function paintDrag(i) {
+    const g = ui.drag;
+    if (i < 0 || g.mode === 'none') return;
+    if (g.mode === 'x' && game.marks[i] === 0) { game.marks[i] = 1; game.auto[i] = 0; g.count++; if (isHome(i)) game.slips++; paintCell(i); }
+    if (g.mode === 'wipe' && game.marks[i] === 1) { game.marks[i] = 0; game.auto[i] = 0; g.count++; paintCell(i); }
+  }
+  board.addEventListener('pointerdown', (e) => {
+    if (!game || game.solved || ui.drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const i = squareAt(e.clientX, e.clientY);
+    if (i < 0) return;
+    ui.drag = { id: e.pointerId, start: i, last: i, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, mode: null, axis: null, count: 0 };
+    try { board.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault();
+  });
+  board.addEventListener('pointermove', (e) => {
+    const g = ui.drag;
+    if (!g || g.id !== e.pointerId) return;
+    const i = squareAt(e.clientX, e.clientY);
+    if (g.mode === null) {
+      if (i === g.start || i < 0) return;   // still a tap until the finger reaches another square
+      const m = game.marks[g.start];
+      g.mode = m === 0 ? 'x' : m === 1 ? 'wipe' : 'none';
+      if (g.mode !== 'none') { settle(-1); pushUndo(); clearHint(); paintDrag(g.start); }
+    }
+    // which line: the way the finger has mostly gone, once it has gone half a square (a short wobble does not decide)
+    if (!g.axis) {
+      const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < ui.px * 0.5) return;
+      g.axis = Math.abs(dx) >= Math.abs(dy) ? 'row' : 'col';
+    }
+    // walk from the last point so a fast finger skips nothing, keeping to the line
+    const steps = Math.max(1, Math.ceil(Math.hypot(e.clientX - g.x, e.clientY - g.y) / (ui.px / 3)));
+    for (let s = 1; s <= steps; s++) paintDrag(lineSquare(g, g.x + (e.clientX - g.x) * s / steps, g.y + (e.clientY - g.y) * s / steps));
+    g.x = e.clientX; g.y = e.clientY; g.last = i;
+  });
+  const endDrag = (e, cancelled) => {
+    const g = ui.drag;
+    if (!g || g.id !== e.pointerId) return;
+    ui.drag = null;
+    if (g.mode === null) { if (!cancelled) tapSquare(g.start); return; }
+    if (g.count) changed('x'); else if (g.mode !== 'none') game.history.pop();
+  };
+  board.addEventListener('pointerup', (e) => endDrag(e, false));
+  board.addEventListener('pointercancel', (e) => endDrag(e, true));
+  // Desktop extra: right-click puts an opossum straight down (or picks it up).
+  board.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (e.pointerType && e.pointerType !== 'mouse') return;   // a long press on a phone does nothing special
+    const i = game && !game.solved ? squareAt(e.clientX, e.clientY) : -1;
+    if (i < 0) return;
+    ui.drag = null;
+    if (game.given[i]) { refuse(i); return; }
+    settle(i);
+    pushUndo();
+    if (game.maybe === i) game.maybe = -1;
+    if (game.marks[i] === 2) removePossum(i); else { placePossum(i); if (game.sol && !isHome(i)) game.slips++; }
+    changed('possum');
+  });
+
+  /* ---------- 7. Hints ---------- */
+  const rowCol = (i) => [(i / game.n) | 0, i % game.n];
+  const list = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
+  const groupName = (g) => (g < game.n ? 'row ' + (g + 1) : g < 2 * game.n ? 'column ' + (g - game.n + 1) : 'the ' + areaName(g - 2 * game.n) + ' area');
+  const cap = (s) => s[0].toUpperCase() + s.slice(1);
+  const areasIn = (mask) => { const out = []; for (let a = 0; a < game.n; a++) if ((mask >>> a) & 1) out.push(a); return out; };
+
+  // Turn a solver step into one short sentence, plus the squares to light up around it.
+  function explain(s) {
+    const n = game.n, here = s.cells.length > 1 ? 'on any of these' : 'here';
+    let text = '', near = [];
+    const groupCells = (g) => geo.cells[g];
+    switch (s.tech) {
+      case 'wrongPossum': {
+        if (s.clash >= 0) {
+          const [r1, c1] = rowCol(s.cells[0]), [r2, c2] = rowCol(s.clash);
+          const how = r1 === r2 ? 'share row ' + (r1 + 1) : c1 === c2 ? 'share column ' + (c1 + 1) : game.reg[s.cells[0]] === game.reg[s.clash] ? 'share the ' + areaName(game.reg[s.clash]) + ' area' : 'are touching';
+          text = `These two opossums ${how}. This one has to go.`; near = [s.clash];
+        } else text = 'This opossum is in the wrong square. Take it off.';
+        break;
+      }
+      case 'wrongX': text = 'This X is on a square that needs an opossum. Clear it.'; break;
+      case 'basic': text = 'This opossum rules out the rest of its row, column and area, and every square touching it.'; near = [s.possum]; break;
+      case 'single': text = `${cap(groupName(s.g))} has only one open square left.`; near = groupCells(s.g); break;
+      case 'confine': text = `${cap(groupName(s.g))}'s open squares are all in ${groupName(s.into)}, so the rest of ${groupName(s.into)} is out.`; near = groupCells(s.g); break;
+      case 'block': text = `An opossum ${here} would leave ${groupName(s.g)} with no open square.`; near = groupCells(s.g); break;
+      case 'pair': case 'group': {
+        const lines = (s.axis ? 'columns ' : 'rows ') + list(s.lines.map((l) => l + 1)), areas = areasIn(s.areas);
+        const names = 'the ' + list(areas.map(areaName)) + ' areas';
+        text = s.owner === 'areas' ? `${cap(names)} fit inside ${lines}, so the rest of those ${s.axis ? 'columns' : 'rows'} is out.` : `${cap(lines)} only have room in ${names}, so the rest of those areas is out.`;
+        near = s.owner === 'areas' ? areas.flatMap((a) => groupCells(2 * n + a)) : s.lines.flatMap((l) => groupCells(s.axis * n + l));
+        break;
+      }
+      case 'chain': text = `An opossum here leads to a dead end: ${groupName(s.g)} runs out of squares.`; near = groupCells(s.g); break;
+      case 'reveal': text = 'This one takes long logic, so here it is: an opossum goes here.'; break;
+    }
+    return { text, near };
+  }
+  function clearHint() {
+    if (!ui.hint) return;
+    ui.hint = null;
+    board.classList.remove('hinting');
+    for (const el of ui.cells) el.classList.remove('ht', 'hc');
+    say('');
+  }
+  // Same as pressing Hint. With apply, it also makes the move. Returns what the test hook reports.
+  function hint(apply) {
+    if (!game || game.solved) return null;
+    if (!game.sol) { say('This board has no answer.'); return { text: 'This board has no answer.', cells: [], action: 'x' }; }
+    settle(-1);
+    const s = Core.nextHint(geo, game.marks, game.sol);
+    if (!s) return null;
+    const { text, near } = explain(s);
+    const out = { text, cells: s.cells.map(rowCol), action: s.action };
+    if (!ui.hint) game.hints++;   // looking at the same hint twice counts once
+    clearHint();
+    if (apply) { doStep(s); say(text); ui.note = ''; return out; }
+    ui.hint = s;
+    board.classList.add('hinting');
+    for (const i of near) ui.cells[i].classList.add('hc');
+    for (const i of s.cells) ui.cells[i].classList.add('ht');
+    say(text, s.action === 'possum' ? 'Place it' : s.action === 'remove' ? 'Fix it' : 'Mark X', () => { const step = ui.hint; if (step) { clearHint(); doStep(step); } });
+    feedback('hint');
+    save();
+    return out;
+  }
+  function doStep(s) {
+    pushUndo();
+    if (s.action === 'possum') placePossum(s.cells[0]);
+    else if (s.action === 'remove') { const i = s.cells[0]; if (game.marks[i] === 2) removePossum(i); else { game.marks[i] = 0; game.auto[i] = 0; } }
+    else for (const i of s.cells) if (game.marks[i] === 0) { game.marks[i] = 1; game.auto[i] = 0; }
+    changed(s.action === 'possum' ? 'possum' : s.action === 'remove' ? 'clear' : 'x');
+  }
+
+  /* ---------- 8. Puzzle maker (never freezes the page) ---------- */
+  // Puzzles are made in short slices with pauses between, and the next one is made ahead of time while you play.
+  // On boards bigger than 12, if a puzzle is slow to come, it gets one opossum placed from the start (a "given").
+  const Maker = (() => {
+    const ready = new Map();   // "size-difficulty" -> a puzzle waiting to be played
+    let warming = '', job = 0;
+    const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+    async function produce(n, level, slice, gap, alive) {
+      const patience = n > 12 ? (gap ? 5000 : 1200) : Infinity;   // work time before a given is allowed
+      let t0 = performance.now(), worked = 0;
+      const breathe = async () => { worked += performance.now() - t0; await pause(gap); t0 = performance.now(); return !alive || alive(); };
+      for (;;) {
+        const it = Core.attempt(n, Math.random, level, worked > patience ? 1 : 0);
+        for (;;) {
+          const s = it.next();
+          if (s.done) { if (s.value && s.value.level === level) return s.value; break; }
+          if (performance.now() - t0 > slice && !(await breathe())) return null;
+        }
+        if (performance.now() - t0 > slice && !(await breathe())) return null;
+      }
+    }
+    return {
+      fresh: (n, level) => produce(n, level, 14, 0),
+      async get(n, level) {
+        const key = n + '-' + level, p = ready.get(key);
+        if (p) { ready.delete(key); return p; }
+        job++; warming = '';   // stop any background work and make this one at full speed
+        return produce(n, level, 14, 0);
+      },
+      // quietly make the next puzzle while the player is busy with this one
+      async warm(n, level) {
+        const key = n + '-' + level;
+        if (ready.has(key) || warming === key) return;
+        const mine = ++job; warming = key;
+        await pause(600);
+        const p = mine === job ? await produce(n, level, 5, 45, () => mine === job) : null;
+        if (p) ready.set(key, p);
+        if (mine === job) warming = '';
+      },
+      giveBack(p) { const key = p.n + '-' + p.level; if (p.level && !ready.has(key)) ready.set(key, p); },
+    };
+  })();
+
+  // What the next puzzle should be: the current level's plan, or the free-play choices.
+  const spec = (stage) => (settings.mode === 'levels' ? levelPlan(stage || settings.stage) : { size: settings.size, difficulty: settings.level });
+  const warmNext = () => { const s = spec(settings.mode === 'levels' && game && game.stage === settings.stage ? settings.stage + 1 : settings.stage); Maker.warm(s.size, s.difficulty); };
+  let asking = 0;   // newest request for a new board wins
+  async function newPuzzle() {
+    const mine = ++asking, s = spec(), stage = settings.mode === 'levels' ? settings.stage : null;
+    const slow = setTimeout(() => { if (mine === asking) $('making').hidden = false; }, 160);
+    const p = await Maker.get(s.size, s.difficulty);
+    clearTimeout(slow);
+    if (mine !== asking) { Maker.giveBack(p); return; }
+    $('making').hidden = true; $('ask').hidden = true;
+    ui.note = '';
+    useGame(makeGame(p, stage));
+    say(''); refresh(); save();
+    if (!$('home').hidden) refreshHome();
+    warmNext();
+  }
+  // Never wipe a puzzle that is under way without asking first.
+  let pending = null;
+  function leaveThen(run, onStay) {
+    if (!inProgress()) { run(); return; }
+    pending = { run, onStay };
+    $('ask').hidden = false;
+  }
+  $('askStay').onclick = () => { $('ask').hidden = true; const p = pending; pending = null; if (p && p.onStay) p.onStay(); };
+  $('askGo').onclick = () => { $('ask').hidden = true; const p = pending; pending = null; if (p) p.run(); };
+
+  /* ---------- 9. Buttons and panels ---------- */
+  function showWin() {
+    const step = ratingStep(game.slips), r = RATINGS[step];
+    $('winKick').textContent = game.stage ? `Level ${game.stage} solved` : 'Solved';
+    $('winTitle').textContent = r.title;
+    $('winLine').textContent = ratingLine(step);
+    const bits = [game.slips === 1 ? '1 slip' : game.slips + ' slips', game.hints === 1 ? '1 hint' : game.hints + ' hints'];
+    if (settings.timer) bits.push(fmt(game.elapsed));
+    if (tally[step] > 1) bits.push(`${r.title} ×${tally[step]}`);
+    $('winStats').textContent = bits.join(' · ');
+    const levels = !!game.stage;
+    $('winNext').textContent = levels ? 'Next level' : 'Next puzzle';
+    for (const k of [3, 5, 10]) $('skip' + k).hidden = !levels;
+    $('win').hidden = false;
+  }
+  function won() {
+    runClock();
+    solvedCount++;
+    if (!game.rated) { game.rated = true; tally[ratingStep(game.slips)]++; if (game.stage > settings.best) settings.best = game.stage; }
+    board.classList.add('won');
+    say('');
+    setTimeout(() => { if (game && game.solved) showWin(); }, 650);
+    feedback('win');
+    warmNext();
+  }
+  function goOn(up) {
+    $('win').hidden = true;
+    if (game && game.stage && settings.mode === 'levels') settings.stage = game.stage + up;
+    newPuzzle();
+  }
+  $('btnUndo').onclick = undo;
+  $('btnHint').onclick = () => hint(false);
+  $('btnRestart').onclick = restart;
+  $('btnNew').onclick = () => leaveThen(newPuzzle);
+  $('noteBtn').onclick = () => { const f = ui.noteAction; if (f) f(); };
+  $('winNext').onclick = () => goOn(1);
+  for (const k of [3, 5, 10]) $('skip' + k).onclick = () => goOn(k);
+  $('winClose').onclick = () => { $('win').hidden = true; say('Solved! Press New for the next one.'); };
+
+  // Settings panel. A change of level, size or difficulty takes effect as a new puzzle when the panel closes.
+  let before = null;
+  const playKey = () => settings.mode + '|' + settings.stage + '|' + settings.size + '|' + settings.level;
+  const chipRow = (id, options, isOn, pick, redraw) => {
+    const box = $(id);
+    box.textContent = '';
+    for (const [value, label, swatch] of options) {
+      const b = document.createElement('button');
+      b.className = 'chip' + (isOn(value) ? ' on' : '');
+      b.setAttribute('aria-pressed', isOn(value));
+      if (swatch) { const i = document.createElement('i'); i.style.background = swatch; b.appendChild(i); }
+      b.appendChild(document.createTextNode(label));
+      b.onclick = () => { pick(value); (redraw || drawSettings)(); save(); };
+      box.appendChild(b);
+    }
+  };
+  function drawSettings() {
+    const lv = settings.mode === 'levels';
+    chipRow('optMode', [['levels', 'Levels'], ['free', 'Free play']], (v) => settings.mode === v, (v) => { settings.mode = v; });
+    // level stepper: -10, -1, the number, +1, +10
+    const stageBox = $('optStage');
+    stageBox.textContent = '';
+    for (const step of [-10, -1, 0, 1, 10]) {
+      const b = document.createElement(step ? 'button' : 'span');
+      b.className = 'chip' + (step ? '' : ' label fun');
+      if (step) { b.textContent = (step > 0 ? '+' : '−') + Math.abs(step); b.setAttribute('aria-label', (step > 0 ? 'Up ' : 'Down ') + Math.abs(step) + (Math.abs(step) > 1 ? ' levels' : ' level')); b.onclick = () => { settings.mode = 'levels'; settings.stage = Math.max(1, settings.stage + step); drawSettings(); save(); }; }
+      else { const p = levelPlan(settings.stage); b.textContent = `Level ${settings.stage} · ${p.size}×${p.size} ${LEVELS[p.difficulty]}`; }
+      stageBox.appendChild(b);
+    }
+    $('rowStage').classList.toggle('dim', !lv); $('rowSize').classList.toggle('dim', lv); $('rowLevel').classList.toggle('dim', lv);
+    chipRow('optSize', [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((n) => [n, String(n)]), (v) => !lv && settings.size === v, (v) => { settings.size = v; settings.mode = 'free'; });
+    chipRow('optLevel', [[1, 'Easy'], [2, 'Medium'], [3, 'Hard']], (v) => !lv && settings.level === v, (v) => { settings.level = v; settings.mode = 'free'; });
+    chipRow('optTheme', Object.keys(THEMES).map((k) => [k, THEMES[k].label, THEMES[k].bar]), (v) => settings.theme === v, (v) => { settings.theme = v; applyTheme(); });
+    chipRow('optMarks', [['x', '✕  X'], ['dot', '●  Dot']], (v) => settings.marks === v, (v) => { settings.marks = v; if (game) repaintAll(); });
+    const box = $('optToggles');
+    box.textContent = '';
+    for (const [key, label] of [['autoX', 'Auto-X'], ['mistakes', 'Show mistakes'], ['timer', 'Timer'], ['sound', 'Sound'], ['buzz', 'Vibrate']]) {
+      const b = document.createElement('button');
+      b.className = 'tog';
+      b.setAttribute('role', 'switch');
+      b.setAttribute('aria-checked', settings[key]);
+      b.innerHTML = `<span>${label}</span><i></i>`;
+      b.onclick = () => {
+        settings[key] = !settings[key];
+        if (key === 'autoX' && game) { if (settings.autoX && !game.solved) { for (let i = 0; i < geo.N; i++) if (game.marks[i] === 2) placePossum(i); refresh(); } ui.fresh = freshMarks(); }   // catch up on opossums already placed
+        if (key === 'mistakes' && game) repaintAll();
+        if (key === 'timer') showClock();
+        if (key === 'sound' && settings.sound) feedback('possum');
+        drawSettings(); save();
+      };
+      box.appendChild(b);
+    }
+    const won = tally.reduce((a, b) => a + b, 0);
+    $('shelf').innerHTML = won ? '<b>Trophy shelf:</b> ' + RATINGS.map((r, k) => (tally[k] ? `${r.title} ×${tally[k]}` : '')).filter(Boolean).join(' · ') : '<b>Trophy shelf:</b> empty so far. Solve one!';
+  }
+  // The main screen: what the game opens on, and where the Home button goes. The puzzle under way stays as it is
+  // underneath (its clock waits), so Continue just lifts the main screen off it.
+  const picked = { stage: 1, size: 8, level: 2 };   // what the two pickers on the main screen are set to
+  function refreshHome() {
+    const going = inProgress(), done = game.solved, where = game.stage ? 'Level ' + game.stage : 'Free play';
+    const kind = `${game.n} \u00d7 ${game.n}` + (LEVELS[game.level] ? ' ' + LEVELS[game.level] : '');
+    let found = 0;
+    for (let i = 0; i < geo.N; i++) if (game.marks[i] === 2) found++;
+    $('homeWhere').textContent = done ? `${where} solved` : going ? `${where} \u00b7 ${kind} \u00b7 ${found} of ${game.n} opossums found` : `${where} \u00b7 ${kind}`;
+    const label = going ? 'Continue' : done && game.stage && settings.mode === 'levels' ? 'Play level ' + (game.stage + 1) : 'Play';
+    $('homePlay').textContent = label; $('homePlay').setAttribute('aria-label', label);
+    const solved = solvedCount === 1 ? '1 puzzle solved' : solvedCount + ' puzzles solved';
+    $('homeBest').textContent = settings.best ? `Best: level ${settings.best} solved \u00b7 ${solved}` : solvedCount ? solved : '';
+  }
+  function drawPickers() {
+    const box = $('homeStage');
+    box.textContent = '';
+    for (const step of [-10, -1, 0, 1, 10]) {
+      const b = document.createElement(step ? 'button' : 'span');
+      b.className = 'chip' + (step ? '' : ' label fun');
+      if (step) { b.textContent = (step > 0 ? '+' : '\u2212') + Math.abs(step); b.setAttribute('aria-label', (step > 0 ? 'Up ' : 'Down ') + Math.abs(step) + (Math.abs(step) > 1 ? ' levels' : ' level')); b.onclick = () => { picked.stage = Math.max(1, picked.stage + step); drawPickers(); }; }
+      else { const pl = levelPlan(picked.stage); b.textContent = `Level ${picked.stage} \u00b7 ${pl.size}\u00d7${pl.size} ${LEVELS[pl.difficulty]}`; }
+      box.appendChild(b);
+    }
+    $('homeLevelGo').textContent = 'Start level ' + picked.stage;
+    chipRow('homeSize', [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((n) => [n, String(n)]), (v) => picked.size === v, (v) => { picked.size = v; }, drawPickers);
+    chipRow('homeDiff', [[1, 'Easy'], [2, 'Medium'], [3, 'Hard']], (v) => picked.level === v, (v) => { picked.level = v; }, drawPickers);
+    $('homeFreeGo').textContent = `Start a ${picked.size} \u00d7 ${picked.size} on ${LEVELS[picked.level]}`;
+  }
+  // Open one picker (or close it if it is open); the other one closes.
+  function togglePicker(which) {
+    for (const [btn, box] of [['homeLevels', 'homeLevelBox'], ['homeFree', 'homeFreeBox']]) {
+      const open = btn === which && $(box).hidden;
+      $(box).hidden = !open; $(btn).setAttribute('aria-expanded', open);
+    }
+    drawPickers();
+  }
+  function showHome() {
+    if (!game) return;
+    $('win').hidden = true; $('ask').hidden = true; pending = null;
+    clearHint(); say('');
+    picked.stage = settings.stage; picked.size = settings.size; picked.level = settings.level;
+    togglePicker(null);
+    refreshHome();
+    $('home').hidden = false;
+    $('home').scrollTop = 0;
+    runClock(); save();
+  }
+  // Into the game. The how-to card greets a first-time player here, after Play.
+  function enterGame() {
+    $('home').hidden = true;
+    if (!seenHow) $('how').hidden = false;
+    if (game && game.solved) showWin();
+    layout(); runClock();
+  }
+  // The big button: Continue the puzzle under way, or Play (after a solved one, that is the next one).
+  function play() {
+    if (game.solved) { $('home').hidden = true; if (!seenHow) $('how').hidden = false; goOn(1); return Promise.resolve(); }
+    enterGame();
+    return Promise.resolve();
+  }
+  $('btnMain').onclick = showHome;
+  $('winHome').onclick = showHome;
+  $('homePlay').onclick = play;
+  $('homeLevels').onclick = () => togglePicker('homeLevels');
+  $('homeFree').onclick = () => togglePicker('homeFree');
+  // Starting something else asks first when a puzzle is under way; "Keep playing" goes back into that puzzle.
+  $('homeLevelGo').onclick = () => leaveThen(() => { settings.mode = 'levels'; settings.stage = picked.stage; $('home').hidden = true; if (!seenHow) $('how').hidden = false; newPuzzle(); }, enterGame);
+  $('homeFreeGo').onclick = () => leaveThen(() => { settings.mode = 'free'; settings.size = picked.size; settings.level = picked.level; $('home').hidden = true; if (!seenHow) $('how').hidden = false; newPuzzle(); }, enterGame);
+  $('homeSettings').onclick = () => openSettings();
+  $('homeHow').onclick = () => { $('how').hidden = false; };
+
+  function openSettings() { before = { key: playKey(), mode: settings.mode, stage: settings.stage, size: settings.size, level: settings.level }; drawSettings(); $('settings').hidden = false; }
+  function closeSettings() {
+    $('settings').hidden = true;
+    if (!before || before.key === playKey()) return;
+    const was = before;
+    // a new kind of puzzle was picked: ask before dropping one that is under way; "Keep playing" puts the choices back
+    leaveThen(newPuzzle, () => { settings.mode = was.mode; settings.stage = was.stage; settings.size = was.size; settings.level = was.level; save(); });
+  }
+  $('btnGear').onclick = openSettings;
+  $('setDone').onclick = closeSettings;
+  $('setDone2').onclick = closeSettings;
+  $('settings').addEventListener('click', (e) => { if (e.target === $('settings')) closeSettings(); });
+  $('setHow').onclick = () => { $('how').hidden = false; };
+  $('howOk').onclick = () => { $('how').hidden = true; if (!seenHow) { seenHow = true; save(); } };
+
+  // Keyboard shortcuts for a desktop: H hint, Enter does the hint, Z undo, R restart, N new.
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey || !$('settings').hidden || !$('how').hidden || !$('ask').hidden || !$('home').hidden) return;
+    const k = e.key.toLowerCase();
+    if (k === 'h') hint(false);
+    else if (k === 'enter' && ui.noteAction && document.activeElement === document.body) ui.noteAction();
+    else if (k === 'z' || k === 'u') undo();
+    else if (k === 'r') restart();
+    else if (k === 'n') { if (game && game.solved) goOn(1); else leaveThen(newPuzzle); }
+  });
+
+  /* ---------- 10. Sound and buzz (both off until switched on) ---------- */
+  let audio = null;
+  function tone(freq, at, len, vol) {
+    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + at;
+    o.type = 'triangle'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + len + 0.03);
+  }
+  function feedback(kind) {
+    if (settings.buzz && navigator.vibrate) { try { navigator.vibrate(kind === 'win' ? [18, 50, 18, 50, 40] : kind === 'possum' ? 14 : 6); } catch (e) {} }
+    if (!settings.sound) return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === 'suspended') audio.resume();
+      if (kind === 'possum') { tone(520, 0, 0.11, 0.08); tone(780, 0.06, 0.14, 0.07); }
+      else if (kind === 'x') tone(330, 0, 0.05, 0.035);
+      else if (kind === 'clear') tone(240, 0, 0.07, 0.04);
+      else if (kind === 'hint') { tone(660, 0, 0.1, 0.05); tone(880, 0.09, 0.16, 0.05); }
+      else if (kind === 'win') [523, 659, 784, 1047, 1319].forEach((f, k) => tone(f, k * 0.09, 0.3, 0.08));
+    } catch (e) {}
+  }
+
+  /* ---------- 11. Test hook (the lead grades with this; rows and columns count from 0) ---------- */
+  const rowsOf = (flat, n) => Array.from({ length: n }, (_, r) => Array.from(flat.slice(r * n, r * n + n)));
+  const pairs = (cells, n) => cells.map((i) => [(i / n) | 0, i % n]);
+  const toPublic = (p) => ({ size: p.n, regions: rowsOf(p.reg, p.n), solution: p.sol.slice(), givens: pairs(p.givens || [], p.n) });
+  window.possumTest = {
+    // A new puzzle of this size at the free-play difficulty, without touching the screen. givens: opossums already placed (big boards only).
+    generate(size) {
+      const n = Math.min(MAX, Math.max(5, size | 0));
+      return Maker.fresh(n, settings.level).then(toPublic);
+    },
+    // Put this exact puzzle on screen as a fresh game. It may come from another generator, so the answer is worked out here.
+    load(p) {
+      const n = p.size, reg = p.regions.flat(), givens = (p.givens || []).map(([r, c]) => r * n + c);
+      let level = 0;
+      const sol = Core.bruteSolve(n, reg, null);
+      if (sol) { const r = Core.rate(Core.makeGeo(n, reg), 3, givens); if (r.solved) level = r.level; }
+      asking++; ui.note = ''; pending = null;
+      $('making').hidden = true; $('ask').hidden = true; $('home').hidden = true;
+      useGame(makeGame({ n, reg, sol, level, givens }, null));
+      say(''); refresh(); save();
+      return Promise.resolve();
+    },
+    getState() {
+      const step = game.solved ? ratingStep(game.slips) : -1;
+      return { size: game.n, regions: rowsOf(game.reg, game.n), cells: rowsOf(game.marks, game.n), solved: game.solved, givens: pairs(game.givens, game.n), mistakes: game.slips, hints: game.hints, level: game.stage, rating: step < 0 ? null : { step, title: RATINGS[step].title } };
+    },
+    // Exactly the same as the player tapping that square: two calls within 350 ms on one square are a double tap.
+    tap(row, col) { tapSquare(row * game.n + col); },
+    hint(opts) { return hint(!!(opts && opts.apply)); },
+    // What a level will be: { size, difficulty }.
+    levelPlan(n) { return levelPlan(n); },
+    // Same as jumping to that level and answering "Start new".
+    setLevel(n) { settings.mode = 'levels'; settings.stage = Math.max(1, n | 0); pending = null; $('home').hidden = true; return newPuzzle(); },
+    // The main screen: is it showing; show it (the Home button); press its big Play / Continue button.
+    isHome() { return !$('home').hidden; },
+    home() { showHome(); return Promise.resolve(); },
+    play() { return play(); },
+    // Dev only: a puzzle of this size and difficulty with that many givens.
+    _make(size, difficulty, nGiven) { let p = null; while (!(p && p.level === difficulty)) p = Core.tryMake(size, Math.random, difficulty, nGiven); return toPublic(p); },
+  };
+
+  /* ---------- 12. Start ---------- */
+  const hadGame = restore();
+  applyTheme();
+  if (hadGame) { if (game.solved) { board.classList.add('won'); $('perch').classList.add('party'); showWin(); } warmNext(); }
+  else {
+    // the very first board is made right away (a few thousandths of a second) so the page never opens empty
+    const s = spec();
+    let p = null, tries = 0;
+    while (!(p && p.level === s.difficulty)) p = Core.tryMake(s.size, Math.random, s.difficulty, s.size > 12 && ++tries > 12 ? 1 : 0);
+    useGame(makeGame(p, settings.mode === 'levels' ? settings.stage : null)); save();
+    warmNext();
+  }
+  showHome();
+})();
+</script>
+<script>if ('serviceWorker' in navigator) addEventListener('load', () => {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+  // clear what retired games left on this phone
+  const gone = ["cube-fable"], saves = ["quiver-cube-fable-v1"];
+  navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => { if (gone.some((d) => r.scope.endsWith('/' + d + '/'))) r.unregister(); })).catch(() => {});
+  if (window.caches) caches.keys().then((ks) => ks.forEach((k) => { if (gone.some((d) => k.startsWith(d + '-'))) caches.delete(k); })).catch(() => {});
+  for (const k of saves) { try { localStorage.removeItem(k); } catch (e) {} }
+});</script>
+</body>
+</html>
